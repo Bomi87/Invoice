@@ -160,7 +160,7 @@
 
   .col-received { width: 88px; }
   .col-label { width: 125px; }
-  .col-vendor { width: 165px; }
+
   .col-invoice { width: 120px; }
 .col-date { width: 105px; }
 .col-due-date { width: 105px; }
@@ -411,7 +411,7 @@
     </div>
 
     <div class="filter">
-      <input id="searchInput" placeholder="검색: Invoice No / Aircraft / Vendor / Subject" oninput="renderTable()" />
+    <input id="searchInput" placeholder="검색: Invoice No / Aircraft / Subject / Airport" oninput="renderTable()" />
 
       <select id="labelFilter" onchange="renderTable()">
         <option value="">전체 라벨</option>
@@ -438,7 +438,7 @@
   <tr>
     <th class="col-received">Received</th>
     <th class="col-label">Label</th>
-    <th class="col-vendor">Vendor</th>
+
 <th class="col-invoice">Invoice No</th>
 <th class="col-date">Date</th>
 <th class="col-due-date">Due Date</th>
@@ -608,7 +608,7 @@ async function scanInvoices() {
 
         if (keyword) {
           const blob = [
-            x.Vendor,
+   
             x.InvoiceNo,
             x.Registry,
             x.TripNo,
@@ -659,9 +659,7 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
         ${escapeHtml(x.SourceLabel || "")}
       </td>
 
-      <td class="col-vendor" title="${escapeHtml(x.Vendor || "")}">
-        ${escapeHtml(x.Vendor || "")}
-      </td>
+  
 
       <td class="col-invoice" title="${escapeHtml(x.InvoiceNo || "")}">
         <b>${escapeHtml(x.InvoiceNo || "")}</b>
