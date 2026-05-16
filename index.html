@@ -544,12 +544,12 @@ td.col-category {
         <option value="Credit Invoice">Credit Invoice</option>
       </select>
 
-      <select id="statusFilter" onchange="renderTable()">
-        <option value="">전체 정산상태</option>
-        <option value="OK">미정산</option>
-        <option value="정산완료">정산완료</option>
-        <option value="ERROR">ERROR</option>
-      </select>
+ <select id="statusFilter" onchange="renderTable()">
+  <option value="">전체 정산상태</option>
+  <option value="UNSETTLED">미정산</option>
+  <option value="SETTLED">정산완료</option>
+  <option value="ERROR">ERROR</option>
+</select>
     </div>
 
     <div class="status" id="status">대기 중</div>
@@ -739,7 +739,13 @@ async function scanInvoices() {
       rows = rows.filter(x => {
         if (label && x.SourceLabel !== label) return false;
         if (type && x.InvoiceType !== type) return false;
-        if (status && x.Status !== status) return false;
+     if (status) {
+  const settled = isSettledInvoice(x);
+
+  if (status === "UNSETTLED" && settled) return false;
+  if (status === "SETTLED" && !settled) return false;
+  if (status === "ERROR" && x.Status !== "ERROR") return false;
+}
 
         if (keyword) {
           const blob = [
@@ -1093,8 +1099,9 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
           }
         });
 
-        renderTable();
-        setStatus("정산완료 처리됨: " + (x.InvoiceNo || x.FileName || ""));
+     sortInvoicesByDueDate();
+renderTable();
+setStatus("정산완료 처리됨: " + (x.InvoiceNo || x.FileName || ""));
 
       } catch (err) {
         console.error(err);
@@ -1129,8 +1136,9 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
           }
         });
 
-        renderTable();
-        setStatus("정산완료 취소됨: " + (x.InvoiceNo || x.FileName || ""));
+   sortInvoicesByDueDate();
+renderTable();
+setStatus("정산완료 취소됨: " + (x.InvoiceNo || x.FileName || ""));
 
       } catch (err) {
         console.error(err);
@@ -1163,17 +1171,26 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       return diffDays >= 0 && diffDays <= days;
     }
 
-    function sortInvoicesByDueDate() {
-      invoices.sort((a, b) => {
-        const da = parseInvoiceDateValue(a.DueDate);
-        const db = parseInvoiceDateValue(b.DueDate);
+function sortInvoicesByDueDate() {
+  invoices.sort((a, b) => {
+    const aSettled = isSettledInvoice(a);
+    const bSettled = isSettledInvoice(b);
 
-        const ta = da ? da.getTime() : 0;
-        const tb = db ? db.getTime() : 0;
-
-        return tb - ta; // 최신 Due Date가 상단
-      });
+    // 1순위: 미정산 먼저, 정산완료는 아래로
+    if (aSettled !== bSettled) {
+      return aSettled ? 1 : -1;
     }
+
+    // 2순위: 같은 정산 상태끼리는 Due Date 최신순
+    const da = parseInvoiceDateValue(a.DueDate);
+    const db = parseInvoiceDateValue(b.DueDate);
+
+    const ta = da ? da.getTime() : 0;
+    const tb = db ? db.getTime() : 0;
+
+    return tb - ta;
+  });
+}
 
     function parseDueDateForSort(value) {
       const d = parseInvoiceDateValue(value);
