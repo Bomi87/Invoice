@@ -533,7 +533,7 @@ td.col-category {
       </select>
 
       <select id="statusFilter" onchange="renderTable()">
-        <option value="">전체 처리상태</option>
+        <option value="">전체 정산상태</option>
         <option value="OK">미정산</option>
         <option value="정산완료">정산완료</option>
         <option value="ERROR">ERROR</option>
@@ -558,7 +558,7 @@ td.col-category {
     <th class="col-amount">Amount</th>
     <th class="col-detail">Detail</th>
 <th class="col-pdf">PDF</th>
-<th class="col-status">처리</th>
+<th class="col-status">Status</th>
   </tr>
 </thead>
         <tbody id="tbody"></tbody>
@@ -831,7 +831,7 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       <td class="col-status" title="${escapeHtml(x.Status || "")}">
         ${settled
           ? '<span class="settled-badge">완료</span>'
-          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">처리</button>'}
+          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">정</button>'}
       </td>
     </tr>
   `;
