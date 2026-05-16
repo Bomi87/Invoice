@@ -472,7 +472,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgZ52uhzNBuZczklT1UqCoK6Sw-eohKpqwboUvysc88gLdA8pDhKoJaI86voyVGIWAUQ/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA75lGkaB7aIkB8kQdZKdk7RxlNUHXv96LuZpA2uihs5FrxSTHhez9pDd7ZW7WO5kjBg/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -700,7 +700,9 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       </td>
 
       <td class="col-pdf" title="${escapeHtml(x.FileName || "")}">
-        ${escapeHtml(x.FileName || "")}
+        ${x.PdfUrl
+          ? '<a href="' + escapeHtml(x.PdfUrl) + '" target="_blank">' + escapeHtml(x.FileName || "PDF") + '</a>'
+          : escapeHtml(x.FileName || "")}
       </td>
 
       <td class="col-gmail">
@@ -767,7 +769,11 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
           </div>
           <div class="detail-summary-item">
             <div class="detail-summary-label">PDF</div>
-            <div class="detail-summary-value">${escapeHtml(x.FileName || "")}</div>
+            <div class="detail-summary-value">
+              ${x.PdfUrl
+                ? '<a href="' + escapeHtml(x.PdfUrl) + '" target="_blank">' + escapeHtml(x.FileName || "PDF") + '</a>'
+                : escapeHtml(x.FileName || "")}
+            </div>
           </div>
         </div>
       `;
@@ -819,15 +825,102 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
     function parseItemsJson(value) {
       if (!value) return [];
 
-      if (Array.isArray(value)) return value;
+      let parsed = [];
 
-      try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        console.warn("ItemsJson parse failed", err);
-        return [];
+      if (Array.isArray(value)) {
+        parsed = value;
+      } else {
+        try {
+          const temp = JSON.parse(value);
+          parsed = Array.isArray(temp) ? temp : [];
+        } catch (err) {
+          console.warn("ItemsJson parse failed", err);
+          parsed = [];
+        }
       }
+
+      return normalizeDetailItems(parsed);
+    }
+
+    function normalizeDetailItems(items) {
+      const result = [];
+
+      (items || []).forEach((item, idx) => {
+        const fixed = normalizeOneDetailItem(item, idx);
+        fixed.forEach(x => result.push(x));
+      });
+
+      return result;
+    }
+
+    function normalizeOneDetailItem(item, idx) {
+      const airport = String(item.airport || item.Airport || "").trim().toUpperCase();
+      const description = String(item.description || item.Description || "").replace(/\s+/g, " ").trim();
+      const unitPrice = String(item.unitPrice || item.unit_price || item.UnitPrice || "").trim();
+      const qty = String(item.qty || item.quantity || item.Qty || "").trim();
+      const amount = String(item.amount || item.Amount || "").trim();
+
+      // 정상 item이면 그대로 표시
+      if (airport && description && unitPrice && qty && amount && !looksLikeMergedUasDescription(description)) {
+        return [{
+          itemNo: item.itemNo || String(idx + 1),
+          airport: airport,
+          description: description,
+          unitPrice: unitPrice,
+          qty: qty,
+          amount: amount
+        }];
+      }
+
+      // 과거 파싱 결과처럼 description 한 칸에 여러 UAS row가 붙은 경우 프론트에서 한 번 더 분리
+      const mergedText = [
+        item.itemNo || String(idx + 1),
+        item.country || "United States of America",
+        airport,
+        description,
+        unitPrice,
+        qty,
+        amount
+      ].join(" ").replace(/\s+/g, " ").trim();
+
+      const split = splitMergedUasItems(mergedText);
+      if (split.length > 0) return split;
+
+      return [{
+        itemNo: item.itemNo || String(idx + 1),
+        airport: airport,
+        description: description,
+        unitPrice: unitPrice,
+        qty: qty,
+        amount: amount
+      }];
+    }
+
+    function looksLikeMergedUasDescription(text) {
+      const s = String(text || "");
+      return /\s+\d+\s+[A-Za-z][A-Za-z\s,.'()\-]+\s+[A-Z]{4}\s+/.test(s);
+    }
+
+    function splitMergedUasItems(text) {
+      const s = String(text || "").replace(/\s+/g, " ").trim();
+      const out = [];
+
+      const rowRegex = /(\d+)\s+([A-Za-z][A-Za-z\s,.'()\-]+?)\s+([A-Z]{4})\s+(.+?)\s+\$?\s*(-?[\d,]+(?:\.\d{1,5})?)\s+([\d,]+(?:\.\d+)?)\s+\$?\s*(-?[\d,]+\.\d{2})(?=\s+\d+\s+[A-Za-z][A-Za-z\s,.'()\-]+?\s+[A-Z]{4}\s+|$)/gi;
+
+      let m;
+      while ((m = rowRegex.exec(s)) !== null) {
+        out.push({
+          itemNo: m[1],
+          country: m[2].trim(),
+          airport: m[3].trim().toUpperCase(),
+          description: m[4].trim(),
+          unitPrice: m[5].replace(/,/g, ""),
+          qty: m[6].replace(/,/g, ""),
+          amount: m[7].replace(/,/g, "")
+        });
+      }
+
+      return out;
     }
 
     function formatMoneyText(value) {
