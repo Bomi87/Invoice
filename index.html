@@ -170,7 +170,7 @@
   .col-amount { width: 105px; }
   .col-detail { width: 80px; }
   .col-pdf { width: 190px; }
-  .col-gmail { width: 65px; }
+
   .col-status { width: 75px; }
 
   .amount {
@@ -447,9 +447,8 @@
     <th class="col-category">Category</th>
     <th class="col-amount">Amount</th>
     <th class="col-detail">Detail</th>
-    <th class="col-pdf">PDF</th>
-    <th class="col-gmail">Gmail</th>
-    <th class="col-status">Status</th>
+<th class="col-pdf">PDF</th>
+<th class="col-status">Status</th>
   </tr>
 </thead>
         <tbody id="tbody"></tbody>
@@ -472,7 +471,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTHRTxmaGB90T0sZmsIfJF9oGa3AyjCOafVAUZFbY7FCtCp0TFqEAjH4YzW_Q-rOvt/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLmUQLptaf3qth9INGl0qrgIQYyAsQ5MFNWkskAFEb2ua1LuQFgWtObwGqwxU5DN619g/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -529,9 +528,8 @@
         setButtonsDisabled(false);
       }
     }
-
-    async function scanInvoices() {
-      if (isScanning || isLoading) return;
+async function scanInvoices() {
+  if (isScanning) return;
 
       const ok = confirm("Gmail 라벨의 PDF 첨부파일을 분석할까요?");
       if (!ok) return;
@@ -633,9 +631,7 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
   const amount = Number(x.Amount || 0);
   const amountClass = amount < 0 ? "negative" : "positive";
 
-  const gmailLink = x.GmailUrl
-    ? '<a href="' + escapeHtml(x.GmailUrl) + '" target="_blank">Open</a>'
-    : "";
+
 
   const categoryClass =
     String(x.Category || "").toUpperCase().includes("WFS") ? "wfs" :
@@ -705,9 +701,6 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
           : escapeHtml(x.FileName || "")}
       </td>
 
-      <td class="col-gmail">
-        ${gmailLink}
-      </td>
 
       <td class="col-status ${statusClass}" title="${escapeHtml(x.Status || "")}">
         ${escapeHtml(x.Status || "")}
@@ -978,10 +971,12 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       if (event.key === "Escape") closeInvoiceDetail();
     });
 
-    document.getElementById("refreshBtn").addEventListener("click", loadInvoices);
-    document.getElementById("scanBtn").addEventListener("click", scanInvoices);
+window.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("refreshBtn").addEventListener("click", loadInvoices);
+  document.getElementById("scanBtn").addEventListener("click", scanInvoices);
 
-    loadInvoices();
+  loadInvoices();
+});
   </script>
 </body>
 </html>
