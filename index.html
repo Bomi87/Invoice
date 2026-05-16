@@ -160,6 +160,7 @@ table {
 .col-received { width: 90px; }
 .col-label { width: 125px; }
 .col-invoice { width: 130px; }
+.col-trip { width: 95px; }
 
 /* Date는 UAS Flight Dates 때문에 넓게 */
 .col-date { width: 190px; }
@@ -199,7 +200,9 @@ td.col-amount {
 }
 
 
-    th.col-detail,
+th.col-trip,
+td.col-trip,
+th.col-detail,
 td.col-detail,
 th.col-status,
 td.col-status,
@@ -562,6 +565,7 @@ td.col-category {
     <th class="col-label">Label</th>
 
 <th class="col-invoice">Invoice No</th>
+<th class="col-trip">Trip No</th>
 <th class="col-date">Date</th>
 <th class="col-due-date">Due Date</th>
 <th class="col-aircraft">Aircraft</th>
@@ -593,7 +597,7 @@ td.col-category {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-qenUknnWgiQ7JfJFFnXSPXxjRkQ4mHVqZy9Qas6q0f8VJkLcSSjbOGl2ISX5YFph1g/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_2-RlL9XK4hISnbX0eHs4HzFFB2kUdmOew9UW8cVpsLiCajMed0G6neifBUmmd7Zgbg/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -805,11 +809,15 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
 
   
 
-      <td class="col-invoice" title="${escapeHtml(x.InvoiceNo || "")}">
-        <b>${escapeHtml(x.InvoiceNo || "")}</b>
-      </td>
+<td class="col-invoice" title="${escapeHtml(x.InvoiceNo || "")}">
+  <b>${escapeHtml(x.InvoiceNo || "")}</b>
+</td>
 
- <td class="col-date" title="${escapeHtml(x.InvoiceDate || "")}">
+<td class="col-trip" title="${escapeHtml(x.TripNo || "")}">
+  ${escapeHtml(x.TripNo || "")}
+</td>
+
+<td class="col-date" title="${escapeHtml(x.InvoiceDate || "")}">
   ${escapeHtml(x.InvoiceDate || "")}
 </td>
 
