@@ -843,7 +843,7 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       <td class="col-status" title="${escapeHtml(x.Status || "")}">
         ${settled
           ? '<button class="settled-btn" onclick="markUnsettled(' + rowIndex + ')">완료</button>'
-          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">처리</button>'}
+          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">-</button>'}
       </td>
     </tr>
   `;
