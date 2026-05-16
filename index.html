@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <title>Invoice PDF Analyzer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    button.secondary {
+      background: #0f172a;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-title {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .filter {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 16px;
+      background: white;
+    }
+
+    .table-wrap {
+      background: white;
+      border-radius: 18px;
+      overflow: auto;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 13px;
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 1;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .amount {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .negative {
+      color: #dc2626;
+    }
+
+    .positive {
+      color: #0f766e;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e2e8f0;
+    }
+
+    .badge.credit {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge.invoice {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status {
+      margin: 10px 0 14px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        padding: 12px;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .filter {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>Invoice PDF Analyzer</h1>
+        <div class="subtitle">Gmail Label → PDF 분석 → Invoice 목록 표출</div>
+      </div>
+
+      <div class="button-row">
+        <button onclick="loadInvoices()">새로고침</button>
+        <button class="secondary" onclick="scanInvoices()">Gmail PDF 분석 실행</button>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Total Invoices</div>
+        <div class="card-value" id="totalCount">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Amount</div>
+        <div class="card-value" id="totalAmount">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Credit Count</div>
+        <div class="card-value" id="creditCount">0</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Needs Review</div>
+        <div class="card-value" id="reviewCount">0</div>
+      </div>
+    </div>
+
+    <div class="filter">
+      <input id="searchInput" placeholder="검색: Invoice No / Aircraft / Vendor / Subject" oninput="renderTable()" />
+
+      <select id="labelFilter" onchange="renderTable()">
+        <option value="">전체 라벨</option>
+      </select>
+
+      <select id="typeFilter" onchange="renderTable()">
+        <option value="">전체 Type</option>
+        <option value="Invoice">Invoice</option>
+        <option value="Credit Invoice">Credit Invoice</option>
+      </select>
+
+      <select id="statusFilter" onchange="renderTable()">
+        <option value="">전체 Status</option>
+        <option value="OK">OK</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+    </div>
+
+    <div class="status" id="status">대기 중</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Received</th>
+            <th>Label</th>
+            <th>Vendor</th>
+            <th>Invoice No</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Aircraft</th>
+            <th>Trip</th>
+            <th>Airport</th>
+            <th>Category</th>
+            <th>Currency</th>
+            <th>Amount</th>
+            <th>Items</th>
+            <th>PDF</th>
+            <th>Gmail</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const APPS_SCRIPT_URL = "여기에_앱스크립트_웹앱_URL";
+    const API_TOKEN = "AppsScript에_넣은_토큰";
+
+    let invoices = [];
+
+    async function callApi(action) {
+      const url =
+        APPS_SCRIPT_URL +
+        "?token=" + encodeURIComponent(API_TOKEN) +
+        "&action=" + encodeURIComponent(action || "list") +
+        "&t=" + Date.now();
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || "Apps Script error");
+      }
+
+      return data;
+    }
+
+    async function loadInvoices() {
+      setStatus("Invoice 목록 불러오는 중...");
+
+      try {
+        const data = await callApi("list");
+        invoices = data.invoices || [];
+
+        updateFilters();
+        renderTable();
+
+        setStatus("불러오기 완료: " + invoices.length + "건");
+
+      } catch (err) {
+        console.error(err);
+        setStatus("오류: " + err.message);
+      }
+    }
+
+    async function scanInvoices() {
+      const ok = confirm("Gmail 라벨의 PDF 첨부파일을 분석할까요?");
+      if (!ok) return;
+
+      setStatus("Gmail PDF 분석 중... 시간이 걸릴 수 있습니다.");
+
+      try {
+        const data = await callApi("scan");
+        const r = data.result || {};
+
+        setStatus(
+          "분석 완료 / PDF: " + (r.totalPdf || 0) +
+          " / 처리: " + (r.totalProcessed || 0) +
+          " / 오류: " + (r.totalError || 0)
+        );
+
+        await loadInvoices();
+
+      } catch (err) {
+        console.error(err);
+        setStatus("오류: " + err.message);
+      }
+    }
+
+    function updateFilters() {
+      const labelSet = new Set();
+
+      invoices.forEach(x => {
+        if (x.SourceLabel) labelSet.add(x.SourceLabel);
+      });
+
+      const labelFilter = document.getElementById("labelFilter");
+      const current = labelFilter.value;
+
+      labelFilter.innerHTML = '<option value="">전체 라벨</option>';
+
+      Array.from(labelSet).sort().forEach(label => {
+        const opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        labelFilter.appendChild(opt);
+      });
+
+      labelFilter.value = current;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("tbody");
+
+      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+      const label = document.getElementById("labelFilter").value;
+      const type = document.getElementById("typeFilter").value;
+      const status = document.getElementById("statusFilter").value;
+
+      let rows = invoices.slice();
+
+      rows = rows.filter(x => {
+        if (label && x.SourceLabel !== label) return false;
+        if (type && x.InvoiceType !== type) return false;
+        if (status && x.Status !== status) return false;
+
+        if (keyword) {
+          const blob = [
+            x.Vendor,
+            x.InvoiceNo,
+            x.Registry,
+            x.TripNo,
+            x.Subject,
+            x.Category,
+            x.Airport,
+            x.FileName
+          ].join(" ").toLowerCase();
+
+          if (!blob.includes(keyword)) return false;
+        }
+
+        return true;
+      });
+
+      updateSummary(rows);
+
+      tbody.innerHTML = rows.map(x => {
+        const amount = Number(x.Amount || 0);
+        const amountClass = amount < 0 ? "negative" : "positive";
+
+        const typeBadge =
+          x.InvoiceType === "Credit Invoice"
+            ? '<span class="badge credit">Credit</span>'
+            : '<span class="badge invoice">Invoice</span>';
+
+        const gmailLink = x.GmailUrl
+          ? '<a href="' + escapeHtml(x.GmailUrl) + '" target="_blank">Open</a>'
+          : "";
+
+        return `
+          <tr>
+            <td>${formatDate(x.ReceivedAt)}</td>
+            <td>${escapeHtml(x.SourceLabel || "")}</td>
+            <td>${escapeHtml(x.Vendor || "")}</td>
+            <td><b>${escapeHtml(x.InvoiceNo || "")}</b></td>
+            <td>${escapeHtml(x.InvoiceDate || "")}</td>
+            <td>${typeBadge}</td>
+            <td><b>${escapeHtml(x.Registry || "")}</b></td>
+            <td>${escapeHtml(x.TripNo || "")}</td>
+            <td>${escapeHtml(x.Airport || "")}</td>
+            <td>${escapeHtml(x.Category || "")}</td>
+            <td>${escapeHtml(x.Currency || "")}</td>
+            <td class="amount ${amountClass}">${formatAmount(amount)}</td>
+            <td>${escapeHtml(x.ItemCount || "")}</td>
+            <td>${escapeHtml(x.FileName || "")}</td>
+            <td>${gmailLink}</td>
+            <td>${escapeHtml(x.Status || "")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function updateSummary(rows) {
+      const totalCount = rows.length;
+      const totalAmount = rows.reduce((sum, x) => sum + Number(x.Amount || 0), 0);
+      const creditCount = rows.filter(x => x.InvoiceType === "Credit Invoice").length;
+      const reviewCount = rows.filter(x => x.Status === "ERROR").length;
+
+      document.getElementById("totalCount").textContent = totalCount;
+      document.getElementById("totalAmount").textContent = formatAmount(totalAmount);
+      document.getElementById("creditCount").textContent = creditCount;
+      document.getElementById("reviewCount").textContent = reviewCount;
+    }
+
+    function formatAmount(n) {
+      if (!Number.isFinite(n)) return "";
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return String(value);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setStatus(msg) {
+      document.getElementById("status").textContent = msg;
+    }
+
+    loadInvoices();
+  </script>
+</body>
+</html>
