@@ -237,8 +237,7 @@
   }
 
   .detail-btn:disabled {
-    background: #cbd5e1;
-    cursor: default;
+    display: none;
   }
 
   .modal-backdrop {
@@ -387,8 +386,8 @@
       </div>
 
       <div class="button-row">
-        <button onclick="loadInvoices()">새로고침</button>
-        <button class="secondary" onclick="scanInvoices()">Gmail PDF 분석 실행</button>
+        <button id="refreshBtn" type="button">새로고침</button>
+        <button id="scanBtn" class="secondary" type="button">Gmail PDF 분석 실행</button>
       </div>
     </div>
 
@@ -473,11 +472,13 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxb0yc53S8ez8VU3iIasmR0tE_c9c6nLrjZcmlIhEfyLwlqb284vhl_Bw_G5F2Cu0ctg/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLr-CLmKuOFCXUTSi2T7ozhZIvZI6NFxi8ap-MPiJUFZyNxmU96wkuFiHvpTlwqfvOlA/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
     let currentRows = [];
+    let isLoading = false;
+    let isScanning = false;
 
     async function callApi(action) {
       const url =
@@ -486,7 +487,7 @@
         "&action=" + encodeURIComponent(action || "list") +
         "&t=" + Date.now();
 
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
 
       if (!data.ok) {
@@ -496,7 +497,19 @@
       return data;
     }
 
+    function setButtonsDisabled(disabled) {
+      const refreshBtn = document.getElementById("refreshBtn");
+      const scanBtn = document.getElementById("scanBtn");
+
+      if (refreshBtn) refreshBtn.disabled = disabled;
+      if (scanBtn) scanBtn.disabled = disabled;
+    }
+
     async function loadInvoices() {
+      if (isLoading || isScanning) return;
+
+      isLoading = true;
+      setButtonsDisabled(true);
       setStatus("Invoice 목록 불러오는 중...");
 
       try {
@@ -511,12 +524,24 @@
       } catch (err) {
         console.error(err);
         setStatus("오류: " + err.message);
+      } finally {
+        isLoading = false;
+        setButtonsDisabled(false);
       }
     }
 
     async function scanInvoices() {
+      if (isScanning || isLoading) return;
+
       const ok = confirm("Gmail 라벨의 PDF 첨부파일을 분석할까요?");
       if (!ok) return;
+
+      isScanning = true;
+      setButtonsDisabled(true);
+
+      const scanBtn = document.getElementById("scanBtn");
+      const oldText = scanBtn ? scanBtn.textContent : "";
+      if (scanBtn) scanBtn.textContent = "분석 중...";
 
       setStatus("Gmail PDF 분석 중... 시간이 걸릴 수 있습니다.");
 
@@ -530,11 +555,19 @@
           " / 오류: " + (r.totalError || 0)
         );
 
+        isScanning = false;
+        setButtonsDisabled(false);
+        if (scanBtn) scanBtn.textContent = oldText;
+
         await loadInvoices();
 
       } catch (err) {
         console.error(err);
         setStatus("오류: " + err.message);
+      } finally {
+        isScanning = false;
+        setButtonsDisabled(false);
+        if (scanBtn) scanBtn.textContent = oldText;
       }
     }
 
@@ -618,7 +651,7 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
   const itemCount = Number(x.ItemCount || 0);
   const detailBtn = itemCount > 0
     ? '<button class="detail-btn" onclick="openInvoiceDetail(' + rowIndex + ')">View</button>'
-    : '<button class="detail-btn" disabled>-</button>';
+    : '';
 
   return `
     <tr title="Type: ${escapeHtml(x.InvoiceType || "")} / Trip: ${escapeHtml(x.TripNo || "")} / Currency: ${escapeHtml(x.Currency || "")} / Items: ${escapeHtml(x.ItemCount || "")}">
@@ -851,6 +884,9 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
     document.addEventListener("keydown", function(event) {
       if (event.key === "Escape") closeInvoiceDetail();
     });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadInvoices);
+    document.getElementById("scanBtn").addEventListener("click", scanInvoices);
 
     loadInvoices();
   </script>
