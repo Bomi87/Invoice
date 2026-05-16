@@ -438,6 +438,18 @@ td.col-category {
     font-weight: 800;
   }
 
+  .settled-btn {
+    background: #94a3b8;
+    color: #ffffff;
+    border-radius: 9px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .settled-btn:hover {
+    background: #64748b;
+  }
+
   .settled-due {
     text-align: center;
   }
@@ -558,7 +570,7 @@ td.col-category {
     <th class="col-amount">Amount</th>
     <th class="col-detail">Detail</th>
 <th class="col-pdf">PDF</th>
-<th class="col-status">Status</th>
+<th class="col-status">처리</th>
   </tr>
 </thead>
         <tbody id="tbody"></tbody>
@@ -581,7 +593,7 @@ td.col-category {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjsK2UfeUTiqJtKlTxloFP77ranrUJ4Qf10BSLO8_tqydNcdCwE2vbx0LAlmhksuUlGw/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-qenUknnWgiQ7JfJFFnXSPXxjRkQ4mHVqZy9Qas6q0f8VJkLcSSjbOGl2ISX5YFph1g/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -830,8 +842,8 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
 
       <td class="col-status" title="${escapeHtml(x.Status || "")}">
         ${settled
-          ? '<span class="settled-badge">완료</span>'
-          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">정</button>'}
+          ? '<button class="settled-btn" onclick="markUnsettled(' + rowIndex + ')">완료</button>'
+          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">처리</button>'}
       </td>
     </tr>
   `;
@@ -1087,6 +1099,42 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       } catch (err) {
         console.error(err);
         setStatus("정산완료 처리 오류: " + err.message);
+      }
+    }
+
+
+    async function markUnsettled(rowIndex) {
+      const x = currentRows[rowIndex];
+      if (!x) return;
+
+      const ok = confirm("이 invoice의 정산완료 처리를 취소할까요?");
+      if (!ok) return;
+
+      try {
+        setStatus("정산완료 취소 중...");
+
+        await callApi("unsettle", {
+          invoiceNo: x.InvoiceNo || "",
+          fileName: x.FileName || ""
+        });
+
+        x.Status = "OK";
+
+        invoices.forEach(item => {
+          if (
+            String(item.InvoiceNo || "") === String(x.InvoiceNo || "") ||
+            String(item.FileName || "") === String(x.FileName || "")
+          ) {
+            item.Status = "OK";
+          }
+        });
+
+        renderTable();
+        setStatus("정산완료 취소됨: " + (x.InvoiceNo || x.FileName || ""));
+
+      } catch (err) {
+        console.error(err);
+        setStatus("정산완료 취소 오류: " + err.message);
       }
     }
 
