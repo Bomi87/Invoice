@@ -127,12 +127,12 @@
     max-height: calc(100vh - 245px);
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    min-width: 1180px;
-  }
+ table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 1280px;
+}
 
   th, td {
     padding: 8px 7px;
@@ -162,8 +162,9 @@
   .col-label { width: 125px; }
   .col-vendor { width: 165px; }
   .col-invoice { width: 120px; }
-  .col-date { width: 105px; }
-  .col-aircraft { width: 80px; }
+.col-date { width: 105px; }
+.col-due-date { width: 105px; }
+.col-aircraft { width: 80px; }
   .col-airport { width: 95px; }
   .col-category { width: 95px; }
   .col-amount { width: 105px; }
@@ -315,9 +316,10 @@
     <th class="col-received">Received</th>
     <th class="col-label">Label</th>
     <th class="col-vendor">Vendor</th>
-    <th class="col-invoice">Invoice No</th>
-    <th class="col-date">Date</th>
-    <th class="col-aircraft">Aircraft</th>
+<th class="col-invoice">Invoice No</th>
+<th class="col-date">Date</th>
+<th class="col-due-date">Due Date</th>
+<th class="col-aircraft">Aircraft</th>
     <th class="col-airport">Airport</th>
     <th class="col-category">Category</th>
     <th class="col-amount">Amount</th>
@@ -332,7 +334,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyymCcKKpc_TjxRFkSLAF6fIs8u0YC0FGJ_UQzEPAg124S2KM9Cb2ruPwBM7gRMAdf5vg/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxK_b1LjKdSHB9wt0BCQapjZWwuv2JudDp0Cik0Y1ewla-UbnbdZbA32MDL4eCZT5lUFQ/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -490,13 +492,17 @@ tbody.innerHTML = rows.map(x => {
         <b>${escapeHtml(x.InvoiceNo || "")}</b>
       </td>
 
-      <td class="col-date" title="${escapeHtml(x.InvoiceDate || "")}">
-        ${escapeHtml(x.InvoiceDate || "")}
-      </td>
+ <td class="col-date" title="${escapeHtml(x.InvoiceDate || "")}">
+  ${escapeHtml(x.InvoiceDate || "")}
+</td>
 
-      <td class="col-aircraft" title="${escapeHtml(x.Registry || "")}">
-        <b>${escapeHtml(x.Registry || "")}</b>
-      </td>
+<td class="col-due-date" title="${escapeHtml(x.DueDate || "")}">
+  ${escapeHtml(x.DueDate || "")}
+</td>
+
+<td class="col-aircraft" title="${escapeHtml(x.Registry || "")}">
+  <b>${escapeHtml(x.Registry || "")}</b>
+</td>
 
       <td class="col-airport" title="${escapeHtml(x.Airport || "")}">
         ${escapeHtml(x.Airport || "")}
