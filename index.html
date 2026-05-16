@@ -413,6 +413,47 @@ td.col-category {
   }
 
 
+  .due-soon {
+    color: #dc2626;
+    font-weight: 900;
+  }
+
+  .settle-btn {
+    background: #0f766e;
+    color: #ffffff;
+    border-radius: 9px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .settled-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .settled-due {
+    text-align: center;
+  }
+
+  .settled-due-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
   @media (max-width: 900px) {
     .app {
       padding: 10px;
@@ -492,8 +533,9 @@ td.col-category {
       </select>
 
       <select id="statusFilter" onchange="renderTable()">
-        <option value="">전체 Status</option>
-        <option value="OK">OK</option>
+        <option value="">전체 처리상태</option>
+        <option value="OK">미정산</option>
+        <option value="정산완료">정산완료</option>
         <option value="ERROR">ERROR</option>
       </select>
     </div>
@@ -516,7 +558,7 @@ td.col-category {
     <th class="col-amount">Amount</th>
     <th class="col-detail">Detail</th>
 <th class="col-pdf">PDF</th>
-<th class="col-status">Status</th>
+<th class="col-status">처리</th>
   </tr>
 </thead>
         <tbody id="tbody"></tbody>
@@ -539,7 +581,7 @@ td.col-category {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyljWNi0IPNex9epGWx9CTpedf2_BGi9lz4NHjHVzAXRdvPFrpdy4LA-ZywwNKcYRwnaQ/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjsK2UfeUTiqJtKlTxloFP77ranrUJ4Qf10BSLO8_tqydNcdCwE2vbx0LAlmhksuUlGw/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -547,14 +589,26 @@ td.col-category {
     let isLoading = false;
     let isScanning = false;
 
-    async function callApi(action) {
-      const url =
-        APPS_SCRIPT_URL +
-        "?token=" + encodeURIComponent(API_TOKEN) +
-        "&action=" + encodeURIComponent(action || "list") +
-        "&t=" + Date.now();
+    async function callApi(action, params) {
+      const query = new URLSearchParams();
 
-      const res = await fetch(url, { cache: "no-store" });
+      query.set("token", API_TOKEN);
+      query.set("action", action || "list");
+      query.set("t", Date.now());
+
+      if (params) {
+        Object.keys(params).forEach(key => {
+          query.set(key, params[key]);
+        });
+      }
+
+      const url = APPS_SCRIPT_URL + "?" + query.toString();
+
+      const res = await fetch(url, {
+        method: "GET",
+        cache: "no-store"
+      });
+
       const data = await res.json();
 
       if (!data.ok) {
@@ -582,6 +636,7 @@ td.col-category {
       try {
         const data = await callApi("list");
         invoices = data.invoices || [];
+        sortInvoicesByDueDate();
 
         updateFilters();
         renderTable();
@@ -698,6 +753,9 @@ async function scanInvoices() {
 tbody.innerHTML = rows.map((x, rowIndex) => {
   const amount = Number(x.Amount || 0);
   const amountClass = amount < 0 ? "negative" : "positive";
+  const settled = isSettledInvoice(x);
+  const dueSoon = isDueWithinDays(x.DueDate, 10) && !settled;
+  const dueDateClass = dueSoon ? "due-soon" : "";
 
 
 
@@ -737,8 +795,10 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
   ${escapeHtml(x.InvoiceDate || "")}
 </td>
 
-<td class="col-due-date" title="${escapeHtml(x.DueDate || "")}">
-  ${escapeHtml(x.DueDate || "")}
+<td class="col-due-date ${settled ? "settled-due" : dueDateClass}" title="${escapeHtml(x.DueDate || "")}">
+  ${settled
+    ? '<span class="settled-due-badge">정산완료</span>'
+    : escapeHtml(x.DueDate || "")}
 </td>
 
 <td class="col-aircraft" title="${escapeHtml(x.Registry || "")}">
@@ -768,8 +828,10 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       </td>
 
 
-      <td class="col-status ${statusClass}" title="${escapeHtml(x.Status || "")}">
-        ${escapeHtml(x.Status || "")}
+      <td class="col-status" title="${escapeHtml(x.Status || "")}">
+        ${settled
+          ? '<span class="settled-badge">완료</span>'
+          : '<button class="settle-btn" onclick="markSettled(' + rowIndex + ')">처리</button>'}
       </td>
     </tr>
   `;
@@ -991,6 +1053,125 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       if (!Number.isFinite(n)) return escapeHtml(String(value));
 
       return formatAmount(n);
+    }
+
+    async function markSettled(rowIndex) {
+      const x = currentRows[rowIndex];
+      if (!x) return;
+
+      const ok = confirm("이 invoice를 정산완료 처리할까요?");
+      if (!ok) return;
+
+      try {
+        setStatus("정산완료 처리 중...");
+
+        await callApi("settle", {
+          invoiceNo: x.InvoiceNo || "",
+          fileName: x.FileName || ""
+        });
+
+        x.Status = "정산완료";
+
+        invoices.forEach(item => {
+          if (
+            String(item.InvoiceNo || "") === String(x.InvoiceNo || "") ||
+            String(item.FileName || "") === String(x.FileName || "")
+          ) {
+            item.Status = "정산완료";
+          }
+        });
+
+        renderTable();
+        setStatus("정산완료 처리됨: " + (x.InvoiceNo || x.FileName || ""));
+
+      } catch (err) {
+        console.error(err);
+        setStatus("정산완료 처리 오류: " + err.message);
+      }
+    }
+
+    function isSettledInvoice(x) {
+      const status = String(x.Status || "").toUpperCase();
+
+      return (
+        status.includes("정산완료") ||
+        status.includes("PAID") ||
+        status.includes("SETTLED") ||
+        status.includes("DONE")
+      );
+    }
+
+    function isDueWithinDays(value, days) {
+      const due = parseInvoiceDateValue(value);
+      if (!due) return false;
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      due.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      return diffDays >= 0 && diffDays <= days;
+    }
+
+    function sortInvoicesByDueDate() {
+      invoices.sort((a, b) => {
+        const da = parseInvoiceDateValue(a.DueDate);
+        const db = parseInvoiceDateValue(b.DueDate);
+
+        const ta = da ? da.getTime() : 0;
+        const tb = db ? db.getTime() : 0;
+
+        return tb - ta; // 최신 Due Date가 상단
+      });
+    }
+
+    function parseDueDateForSort(value) {
+      const d = parseInvoiceDateValue(value);
+      return d ? d.getTime() : 0;
+    }
+
+    function parseInvoiceDateValue(value) {
+      if (!value) return null;
+
+      const text = String(value).trim();
+
+      // 10-JUN-2026
+      let m = text.match(/^([0-9]{1,2})[-\s]([A-Za-z]{3})[-\s]([0-9]{4})$/);
+      if (m) {
+        return new Date(Number(m[3]), monthIndex(m[2]), Number(m[1]));
+      }
+
+      // 2026-06-10
+      m = text.match(/^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})$/);
+      if (m) {
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      }
+
+      const d = new Date(text);
+      if (!isNaN(d.getTime())) return d;
+
+      return null;
+    }
+
+    function monthIndex(mmm) {
+      const months = {
+        JAN: 0,
+        FEB: 1,
+        MAR: 2,
+        APR: 3,
+        MAY: 4,
+        JUN: 5,
+        JUL: 6,
+        AUG: 7,
+        SEP: 8,
+        OCT: 9,
+        NOV: 10,
+        DEC: 11
+      };
+
+      return months[String(mmm || "").toUpperCase()] ?? 0;
     }
 
     function updateSummary(rows) {
