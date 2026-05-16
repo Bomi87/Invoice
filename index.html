@@ -1247,18 +1247,38 @@ function sortInvoicesByDueDate() {
       return months[String(mmm || "").toUpperCase()] ?? 0;
     }
 
-    function updateSummary(rows) {
-      const totalCount = rows.length;
-      const totalAmount = rows.reduce((sum, x) => sum + Number(x.Amount || 0), 0);
-      const creditCount = rows.filter(x => x.InvoiceType === "Credit Invoice").length;
-      const reviewCount = rows.filter(x => x.Status === "ERROR").length;
+function isCreditInvoice(row) {
+  const invoiceType = String(row.InvoiceType || "").toUpperCase();
+  const dueDate = String(row.DueDate || "").toUpperCase();
+  const invoiceNo = String(row.InvoiceNo || "").toUpperCase();
+  const fileName = String(row.FileName || "").toUpperCase();
+  const amount = Number(String(row.Amount || "0").replace(/,/g, ""));
 
-      document.getElementById("totalCount").textContent = totalCount;
-      document.getElementById("totalAmount").textContent = formatAmount(totalAmount);
-      document.getElementById("creditCount").textContent = creditCount;
-      document.getElementById("reviewCount").textContent = reviewCount;
-    }
+  return (
+    invoiceType.includes("CREDIT") ||
+    dueDate.includes("CREDIT NOTE") ||
+    invoiceNo.startsWith("CRN") ||
+    fileName.startsWith("CRN") ||
+    amount < 0
+  );
+}
+    
+function updateSummary(rows) {
+  const totalCount = rows.length;
 
+  const totalAmount = rows.reduce((sum, x) => {
+    const amount = Number(String(x.Amount || "0").replace(/,/g, ""));
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+
+  const creditCount = rows.filter(isCreditInvoice).length;
+  const reviewCount = rows.filter(x => x.Status === "ERROR").length;
+
+  document.getElementById("totalCount").textContent = totalCount;
+  document.getElementById("totalAmount").textContent = formatAmount(totalAmount);
+  document.getElementById("creditCount").textContent = creditCount;
+  document.getElementById("reviewCount").textContent = reviewCount;
+}
     function formatAmount(n) {
       if (!Number.isFinite(n)) return "";
       return n.toLocaleString(undefined, {
