@@ -127,13 +127,12 @@
     max-height: calc(100vh - 245px);
   }
 
- table {
+table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  min-width: 1280px;
+  min-width: 1500px;
 }
-
   th, td {
     padding: 8px 7px;
     border-bottom: 1px solid #e2e8f0;
@@ -158,25 +157,56 @@
     background: #f8fafc;
   }
 
-  .col-received { width: 88px; }
-  .col-label { width: 125px; }
+.col-received { width: 90px; }
+.col-label { width: 125px; }
+.col-invoice { width: 130px; }
 
-  .col-invoice { width: 120px; }
-.col-date { width: 105px; }
+/* Date는 UAS Flight Dates 때문에 넓게 */
+.col-date { width: 190px; }
+
 .col-due-date { width: 105px; }
-.col-aircraft { width: 80px; }
-  .col-airport { width: 95px; }
-  .col-category { width: 95px; }
-  .col-amount { width: 105px; }
-  .col-detail { width: 80px; }
-  .col-pdf { width: 190px; }
+.col-aircraft { width: 85px; }
 
-  .col-status { width: 75px; }
+/* 여러 공항 표기 대응 */
+.col-airport { width: 140px; }
 
-  .amount {
-    text-align: right;
-    font-weight: 800;
-  }
+.col-category { width: 90px; }
+
+/* Amount는 너무 넓지 않게 */
+.col-amount { width: 115px; }
+
+.col-detail { width: 80px; }
+
+/* PDF 파일명은 길어서 넓게 */
+.col-pdf { width: 240px; }
+
+.col-status { width: 75px; }
+
+
+
+    .amount {
+  text-align: right;
+  font-weight: 800;
+}
+
+th.col-amount,
+td.col-amount {
+  text-align: right;
+}
+
+td.col-amount {
+  font-weight: 800;
+}
+
+
+    th.col-detail,
+td.col-detail,
+th.col-status,
+td.col-status,
+th.col-category,
+td.col-category {
+  text-align: center;
+}
 
   .negative {
     color: #dc2626;
@@ -471,7 +501,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWgSpQpvV0pMyNS2g_MctuKp3RWBU_kX-2q5ah4GqHa_HT01h22ltWYyJev4OMECMkJA/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybRzf-9PnQ1p5aPfwiOur3wHx7llFFOKr2m_tXwwjXM1L6UbdwTiiRry1CV5Etq5FrTQ/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
