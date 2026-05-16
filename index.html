@@ -168,6 +168,7 @@
   .col-airport { width: 95px; }
   .col-category { width: 95px; }
   .col-amount { width: 105px; }
+  .col-detail { width: 80px; }
   .col-pdf { width: 190px; }
   .col-gmail { width: 65px; }
   .col-status { width: 75px; }
@@ -226,6 +227,125 @@
     text-decoration: none;
   }
 
+
+  .detail-btn {
+    border-radius: 9px;
+    padding: 6px 9px;
+    font-size: 12px;
+    background: #334155;
+    color: #ffffff;
+  }
+
+  .detail-btn:disabled {
+    background: #cbd5e1;
+    cursor: default;
+  }
+
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(15, 23, 42, 0.55);
+    padding: 20px;
+  }
+
+  .modal-backdrop.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal {
+    width: min(980px, 96vw);
+    max-height: 86vh;
+    overflow: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+  }
+
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 18px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .modal-subtitle {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .modal-close {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-radius: 10px;
+    padding: 8px 11px;
+  }
+
+  .modal-body {
+    padding: 14px 18px 18px;
+  }
+
+  .detail-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .detail-summary-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 9px 10px;
+  }
+
+  .detail-summary-label {
+    color: #64748b;
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .detail-summary-value {
+    font-weight: 800;
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .detail-table-wrap {
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .detail-table {
+    min-width: 760px;
+    table-layout: auto;
+  }
+
+  .detail-table th,
+  .detail-table td {
+    font-size: 12px;
+    padding: 8px 9px;
+  }
+
+  .detail-table .num {
+    text-align: right;
+    font-weight: 800;
+  }
+
+
   @media (max-width: 900px) {
     .app {
       padding: 10px;
@@ -247,8 +367,12 @@
       max-height: calc(100vh - 300px);
     }
 
+    .detail-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     table {
-      min-width: 1050px;
+      min-width: 1130px;
     }
   }
 </style>
@@ -323,6 +447,7 @@
     <th class="col-airport">Airport</th>
     <th class="col-category">Category</th>
     <th class="col-amount">Amount</th>
+    <th class="col-detail">Detail</th>
     <th class="col-pdf">PDF</th>
     <th class="col-gmail">Gmail</th>
     <th class="col-status">Status</th>
@@ -333,11 +458,26 @@
     </div>
   </div>
 
+
+  <div class="modal-backdrop" id="detailModal" onclick="closeInvoiceDetail(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="detailTitle">Invoice Detail</div>
+          <div class="modal-subtitle" id="detailSubtitle"></div>
+        </div>
+        <button class="modal-close" onclick="closeInvoiceDetail()">닫기</button>
+      </div>
+      <div class="modal-body" id="detailBody"></div>
+    </div>
+  </div>
+
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTT4BjuKA6yZ9dQVlJ6OUE7-o6-WfCXwTUWIL7FwYDGmXleyBWNa5iBIyIDt-nltLg8Q/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxb0yc53S8ez8VU3iIasmR0tE_c9c6nLrjZcmlIhEfyLwlqb284vhl_Bw_G5F2Cu0ctg/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
+    let currentRows = [];
 
     async function callApi(action) {
       const url =
@@ -454,8 +594,9 @@
       });
 
       updateSummary(rows);
+      currentRows = rows;
 
-tbody.innerHTML = rows.map(x => {
+tbody.innerHTML = rows.map((x, rowIndex) => {
   const amount = Number(x.Amount || 0);
   const amountClass = amount < 0 ? "negative" : "positive";
 
@@ -473,6 +614,11 @@ tbody.innerHTML = rows.map(x => {
     x.Status === "OK" ? "status-ok" :
     x.Status === "ERROR" ? "status-error" :
     "";
+
+  const itemCount = Number(x.ItemCount || 0);
+  const detailBtn = itemCount > 0
+    ? '<button class="detail-btn" onclick="openInvoiceDetail(' + rowIndex + ')">View</button>'
+    : '<button class="detail-btn" disabled>-</button>';
 
   return `
     <tr title="Type: ${escapeHtml(x.InvoiceType || "")} / Trip: ${escapeHtml(x.TripNo || "")} / Currency: ${escapeHtml(x.Currency || "")} / Items: ${escapeHtml(x.ItemCount || "")}">
@@ -516,6 +662,10 @@ tbody.innerHTML = rows.map(x => {
         ${formatAmount(amount)}
       </td>
 
+      <td class="col-detail">
+        ${detailBtn}
+      </td>
+
       <td class="col-pdf" title="${escapeHtml(x.FileName || "")}">
         ${escapeHtml(x.FileName || "")}
       </td>
@@ -530,6 +680,132 @@ tbody.innerHTML = rows.map(x => {
     </tr>
   `;
 }).join("");
+    }
+
+
+    function openInvoiceDetail(rowIndex) {
+      const x = currentRows[rowIndex];
+      if (!x) return;
+
+      const items = parseItemsJson(x.ItemsJson);
+      const modal = document.getElementById("detailModal");
+      const title = document.getElementById("detailTitle");
+      const subtitle = document.getElementById("detailSubtitle");
+      const body = document.getElementById("detailBody");
+
+      title.textContent = "Invoice Detail - " + (x.InvoiceNo || "");
+
+      subtitle.textContent =
+        "Vendor: " + (x.Vendor || "") +
+        " / Date: " + (x.InvoiceDate || "") +
+        " / Due: " + (x.DueDate || "") +
+        " / Aircraft: " + (x.Registry || "") +
+        " / Airport: " + (x.Airport || "");
+
+      const summaryHtml = `
+        <div class="detail-summary">
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Invoice No</div>
+            <div class="detail-summary-value">${escapeHtml(x.InvoiceNo || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Service Date</div>
+            <div class="detail-summary-value">${escapeHtml(x.InvoiceDate || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Due Date</div>
+            <div class="detail-summary-value">${escapeHtml(x.DueDate || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Grand Total</div>
+            <div class="detail-summary-value">${escapeHtml(x.Currency || "USD")} ${formatAmount(Number(x.Amount || 0))}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Aircraft</div>
+            <div class="detail-summary-value">${escapeHtml(x.Registry || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Airport</div>
+            <div class="detail-summary-value">${escapeHtml(x.Airport || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">Trip No</div>
+            <div class="detail-summary-value">${escapeHtml(x.TripNo || "")}</div>
+          </div>
+          <div class="detail-summary-item">
+            <div class="detail-summary-label">PDF</div>
+            <div class="detail-summary-value">${escapeHtml(x.FileName || "")}</div>
+          </div>
+        </div>
+      `;
+
+      let tableHtml = "";
+
+      if (items.length === 0) {
+        tableHtml = '<div class="status">표시할 detail item이 없습니다.</div>';
+      } else {
+        tableHtml = `
+          <div class="detail-table-wrap">
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Airport</th>
+                  <th>Description</th>
+                  <th>Unit Price</th>
+                  <th>Qty</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((item, idx) => `
+                  <tr>
+                    <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
+                    <td>${escapeHtml(item.airport || "")}</td>
+                    <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
+                    <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
+                    <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+                    <td class="num">${formatMoneyText(item.amount || "")}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      body.innerHTML = summaryHtml + tableHtml;
+      modal.classList.add("show");
+    }
+
+    function closeInvoiceDetail(event) {
+      if (event && event.target && event.target.id !== "detailModal") return;
+      document.getElementById("detailModal").classList.remove("show");
+    }
+
+    function parseItemsJson(value) {
+      if (!value) return [];
+
+      if (Array.isArray(value)) return value;
+
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.warn("ItemsJson parse failed", err);
+        return [];
+      }
+    }
+
+    function formatMoneyText(value) {
+      if (value === null || value === undefined || value === "") return "";
+
+      const raw = String(value).replace(/[$,]/g, "").trim();
+      const n = Number(raw);
+
+      if (!Number.isFinite(n)) return escapeHtml(String(value));
+
+      return formatAmount(n);
     }
 
     function updateSummary(rows) {
@@ -571,6 +847,10 @@ tbody.innerHTML = rows.map(x => {
     function setStatus(msg) {
       document.getElementById("status").textContent = msg;
     }
+
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Escape") closeInvoiceDetail();
+    });
 
     loadInvoices();
   </script>
