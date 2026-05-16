@@ -7,208 +7,250 @@
   <title>Invoice PDF Analyzer</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+  * {
+    box-sizing: border-box;
+  }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: #f1f5f9;
-      color: #0f172a;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-    }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 
+  .app {
+    width: 100%;
+    max-width: 1920px;
+    margin: 0 auto;
+    padding: 10px 14px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.15;
+  }
+
+  .subtitle {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    background: #2563eb;
+    color: white;
+  }
+
+  button.secondary {
+    background: #0f172a;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 14px;
+    padding: 11px 14px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+  }
+
+  .card-title {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 5px;
+  }
+
+  .card-value {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .filter {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 6px;
+  }
+
+  input, select {
+    width: 100%;
+    height: 38px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 10px;
+    font-size: 14px;
+    background: white;
+  }
+
+  .status {
+    margin: 6px 0 8px;
+    color: #475569;
+    font-size: 13px;
+  }
+
+  .table-wrap {
+    background: white;
+    border-radius: 14px;
+    overflow: auto;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    max-height: calc(100vh - 245px);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 1180px;
+  }
+
+  th, td {
+    padding: 8px 7px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 12px;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    z-index: 2;
+    font-size: 11px;
+    color: #475569;
+  }
+
+  tr:hover td {
+    background: #f8fafc;
+  }
+
+  .col-received { width: 88px; }
+  .col-label { width: 125px; }
+  .col-vendor { width: 165px; }
+  .col-invoice { width: 120px; }
+  .col-date { width: 105px; }
+  .col-aircraft { width: 80px; }
+  .col-airport { width: 95px; }
+  .col-category { width: 95px; }
+  .col-amount { width: 105px; }
+  .col-pdf { width: 190px; }
+  .col-gmail { width: 65px; }
+  .col-status { width: 75px; }
+
+  .amount {
+    text-align: right;
+    font-weight: 800;
+  }
+
+  .negative {
+    color: #dc2626;
+  }
+
+  .positive {
+    color: #0f766e;
+  }
+
+  .status-ok {
+    color: #0f766e;
+    font-weight: 800;
+  }
+
+  .status-error {
+    color: #dc2626;
+    font-weight: 800;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #e2e8f0;
+  }
+
+  .badge.wfs {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .badge.uas {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.review {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  a {
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  @media (max-width: 900px) {
     .app {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 26px;
-    }
-
-    .subtitle {
-      margin-top: 6px;
-      color: #64748b;
-      font-size: 14px;
-    }
-
-    .button-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      background: #2563eb;
-      color: white;
-    }
-
-    button.secondary {
-      background: #0f172a;
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
+      padding: 10px;
     }
 
     .cards {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    }
-
-    .card-title {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 8px;
-    }
-
-    .card-value {
-      font-size: 24px;
-      font-weight: 800;
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .filter {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
+      grid-template-columns: 1fr;
     }
 
-    input, select {
-      width: 100%;
-      height: 44px;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 0 12px;
-      font-size: 16px;
-      background: white;
+    h1 {
+      font-size: 20px;
     }
 
     .table-wrap {
-      background: white;
-      border-radius: 18px;
-      overflow: auto;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      max-height: calc(100vh - 300px);
     }
 
     table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 1200px;
+      min-width: 1050px;
     }
-
-    th, td {
-      padding: 12px 10px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 13px;
-      text-align: left;
-      vertical-align: top;
-      white-space: nowrap;
-    }
-
-    th {
-      position: sticky;
-      top: 0;
-      background: #f8fafc;
-      z-index: 1;
-      font-size: 12px;
-      color: #475569;
-    }
-
-    .amount {
-      text-align: right;
-      font-weight: 800;
-    }
-
-    .negative {
-      color: #dc2626;
-    }
-
-    .positive {
-      color: #0f766e;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #e2e8f0;
-    }
-
-    .badge.credit {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .badge.invoice {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    .status {
-      margin: 10px 0 14px;
-      color: #475569;
-      font-size: 14px;
-    }
-
-    a {
-      color: #2563eb;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    @media (max-width: 900px) {
-      .app {
-        padding: 12px;
-      }
-
-      .cards {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .filter {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 22px;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 
 <body>
@@ -268,33 +310,29 @@
 
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>Received</th>
-            <th>Label</th>
-            <th>Vendor</th>
-            <th>Invoice No</th>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Aircraft</th>
-            <th>Trip</th>
-            <th>Airport</th>
-            <th>Category</th>
-            <th>Currency</th>
-            <th>Amount</th>
-            <th>Items</th>
-            <th>PDF</th>
-            <th>Gmail</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+<thead>
+  <tr>
+    <th class="col-received">Received</th>
+    <th class="col-label">Label</th>
+    <th class="col-vendor">Vendor</th>
+    <th class="col-invoice">Invoice No</th>
+    <th class="col-date">Date</th>
+    <th class="col-aircraft">Aircraft</th>
+    <th class="col-airport">Airport</th>
+    <th class="col-category">Category</th>
+    <th class="col-amount">Amount</th>
+    <th class="col-pdf">PDF</th>
+    <th class="col-gmail">Gmail</th>
+    <th class="col-status">Status</th>
+  </tr>
+</thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygnQ7GP6yDwzaikb9Ms7YKrEAhC60HekUREHqW58PwRk0b9poVhM2qODcBhN6lEh7l3A/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyymCcKKpc_TjxRFkSLAF6fIs8u0YC0FGJ_UQzEPAg124S2KM9Cb2ruPwBM7gRMAdf5vg/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -415,40 +453,77 @@
 
       updateSummary(rows);
 
-      tbody.innerHTML = rows.map(x => {
-        const amount = Number(x.Amount || 0);
-        const amountClass = amount < 0 ? "negative" : "positive";
+tbody.innerHTML = rows.map(x => {
+  const amount = Number(x.Amount || 0);
+  const amountClass = amount < 0 ? "negative" : "positive";
 
-        const typeBadge =
-          x.InvoiceType === "Credit Invoice"
-            ? '<span class="badge credit">Credit</span>'
-            : '<span class="badge invoice">Invoice</span>';
+  const gmailLink = x.GmailUrl
+    ? '<a href="' + escapeHtml(x.GmailUrl) + '" target="_blank">Open</a>'
+    : "";
 
-        const gmailLink = x.GmailUrl
-          ? '<a href="' + escapeHtml(x.GmailUrl) + '" target="_blank">Open</a>'
-          : "";
+  const categoryClass =
+    String(x.Category || "").toUpperCase().includes("WFS") ? "wfs" :
+    String(x.Category || "").toUpperCase().includes("UAS") ? "uas" :
+    String(x.Category || "").toUpperCase().includes("REVIEW") ? "review" :
+    "";
 
-        return `
-          <tr>
-            <td>${formatDate(x.ReceivedAt)}</td>
-            <td>${escapeHtml(x.SourceLabel || "")}</td>
-            <td>${escapeHtml(x.Vendor || "")}</td>
-            <td><b>${escapeHtml(x.InvoiceNo || "")}</b></td>
-            <td>${escapeHtml(x.InvoiceDate || "")}</td>
-            <td>${typeBadge}</td>
-            <td><b>${escapeHtml(x.Registry || "")}</b></td>
-            <td>${escapeHtml(x.TripNo || "")}</td>
-            <td>${escapeHtml(x.Airport || "")}</td>
-            <td>${escapeHtml(x.Category || "")}</td>
-            <td>${escapeHtml(x.Currency || "")}</td>
-            <td class="amount ${amountClass}">${formatAmount(amount)}</td>
-            <td>${escapeHtml(x.ItemCount || "")}</td>
-            <td>${escapeHtml(x.FileName || "")}</td>
-            <td>${gmailLink}</td>
-            <td>${escapeHtml(x.Status || "")}</td>
-          </tr>
-        `;
-      }).join("");
+  const statusClass =
+    x.Status === "OK" ? "status-ok" :
+    x.Status === "ERROR" ? "status-error" :
+    "";
+
+  return `
+    <tr title="Type: ${escapeHtml(x.InvoiceType || "")} / Trip: ${escapeHtml(x.TripNo || "")} / Currency: ${escapeHtml(x.Currency || "")} / Items: ${escapeHtml(x.ItemCount || "")}">
+      <td class="col-received" title="${escapeHtml(formatDate(x.ReceivedAt))}">
+        ${formatDate(x.ReceivedAt)}
+      </td>
+
+      <td class="col-label" title="${escapeHtml(x.SourceLabel || "")}">
+        ${escapeHtml(x.SourceLabel || "")}
+      </td>
+
+      <td class="col-vendor" title="${escapeHtml(x.Vendor || "")}">
+        ${escapeHtml(x.Vendor || "")}
+      </td>
+
+      <td class="col-invoice" title="${escapeHtml(x.InvoiceNo || "")}">
+        <b>${escapeHtml(x.InvoiceNo || "")}</b>
+      </td>
+
+      <td class="col-date" title="${escapeHtml(x.InvoiceDate || "")}">
+        ${escapeHtml(x.InvoiceDate || "")}
+      </td>
+
+      <td class="col-aircraft" title="${escapeHtml(x.Registry || "")}">
+        <b>${escapeHtml(x.Registry || "")}</b>
+      </td>
+
+      <td class="col-airport" title="${escapeHtml(x.Airport || "")}">
+        ${escapeHtml(x.Airport || "")}
+      </td>
+
+      <td class="col-category" title="${escapeHtml(x.Category || "")}">
+        <span class="badge ${categoryClass}">${escapeHtml(x.Category || "")}</span>
+      </td>
+
+      <td class="col-amount amount ${amountClass}" title="${formatAmount(amount)}">
+        ${formatAmount(amount)}
+      </td>
+
+      <td class="col-pdf" title="${escapeHtml(x.FileName || "")}">
+        ${escapeHtml(x.FileName || "")}
+      </td>
+
+      <td class="col-gmail">
+        ${gmailLink}
+      </td>
+
+      <td class="col-status ${statusClass}" title="${escapeHtml(x.Status || "")}">
+        ${escapeHtml(x.Status || "")}
+      </td>
+    </tr>
+  `;
+}).join("");
     }
 
     function updateSummary(rows) {
