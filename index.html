@@ -478,9 +478,19 @@ td.col-category {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .filter {
-      grid-template-columns: 1fr;
-    }
+.filter {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.filter input {
+  grid-column: 1 / -1;
+}
+
+.filter select {
+  min-width: 0;
+  padding: 0 6px;
+  font-size: 12px;
+}
 
     h1 {
       font-size: 20px;
