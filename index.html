@@ -433,6 +433,12 @@ td.col-category {
     word-break: break-word;
   }
 
+.detail-service-date {
+  line-height: 1.25;
+  white-space: normal;
+  word-break: keep-all;
+}
+    
   .detail-table-wrap {
     overflow: auto;
     border: 1px solid #e2e8f0;
@@ -611,6 +617,10 @@ td.col-category {
     .detail-summary {
       grid-template-columns: repeat(2, 1fr);
     }
+
+    .detail-service-date {
+  font-size: 13px;
+}
 
     table {
       min-width: 1130px;
@@ -1063,10 +1073,14 @@ subtitle.style.display = "none";
             <div class="detail-summary-label">Invoice No</div>
             <div class="detail-summary-value">${escapeHtml(x.InvoiceNo || "")}</div>
           </div>
-          <div class="detail-summary-item">
-            <div class="detail-summary-label">Service Date</div>
-            <div class="detail-summary-value">${escapeHtml(x.InvoiceDate || "")}</div>
-          </div>
+
+          
+   <div class="detail-summary-item">
+  <div class="detail-summary-label">Service Date</div>
+  <div class="detail-summary-value detail-service-date">${formatDetailServiceDate(x.InvoiceDate || "")}</div>
+</div>
+
+          
           <div class="detail-summary-item">
             <div class="detail-summary-label">Due Date</div>
             <div class="detail-summary-value">${escapeHtml(x.DueDate || "")}</div>
@@ -1534,7 +1548,44 @@ function updateSummary(rows) {
         maximumFractionDigits: 2
       });
     }
+function formatDetailServiceDate(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
 
+  // 예: 05 Apr 2026 - 16 Apr 2026
+  const rangeMatch = text.match(
+    /^([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})\s*[-~–—]\s*([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})$/i
+  );
+
+  if (rangeMatch) {
+    const start =
+      String(rangeMatch[1]).padStart(2, "0") +
+      rangeMatch[2].toUpperCase() +
+      " " +
+      rangeMatch[3];
+
+    const end =
+      String(rangeMatch[4]).padStart(2, "0") +
+      rangeMatch[5].toUpperCase() +
+      " " +
+      rangeMatch[6];
+
+    return escapeHtml(start) + " ~<br>" + escapeHtml(end);
+  }
+
+  // 예: 12-APR-2026
+  const singleDash = text.match(/^([0-9]{1,2})-([A-Za-z]{3})-([0-9]{4})$/i);
+  if (singleDash) {
+    return escapeHtml(
+      String(singleDash[1]).padStart(2, "0") +
+      singleDash[2].toUpperCase() +
+      " " +
+      singleDash[3]
+    );
+  }
+
+  return escapeHtml(text);
+}
     function formatDate(value) {
       if (!value) return "";
       const d = new Date(value);
