@@ -96,12 +96,12 @@
     line-height: 1.1;
   }
 
-  .filter {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
-    gap: 7px;
-    margin-bottom: 6px;
-  }
+.filter {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr 1fr 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 6px;
+}
 
   input, select {
     width: 100%;
@@ -523,8 +523,15 @@ td.col-category {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.filter input {
+.filter input#searchInput {
   grid-column: 1 / -1;
+}
+
+.filter input,
+.filter select {
+  min-width: 0;
+  padding: 0 6px;
+  font-size: 12px;
 }
 
 .filter select {
@@ -585,26 +592,31 @@ td.col-category {
       </div>
     </div>
 
-    <div class="filter">
-    <input id="searchInput" placeholder="검색: Invoice No / Aircraft / Subject / Airport" oninput="renderTable()" />
+<div class="filter">
+  <input id="searchInput" placeholder="검색: Invoice No / Aircraft / Subject / Airport" oninput="renderTable()" />
 
-      <select id="labelFilter" onchange="renderTable()">
-        <option value="">전체 라벨</option>
-      </select>
+  <input id="dateFromFilter" type="date" onchange="renderTable()" title="조회 시작일" />
+  <input id="dateToFilter" type="date" onchange="renderTable()" title="조회 종료일" />
 
-      <select id="typeFilter" onchange="renderTable()">
-        <option value="">전체 Type</option>
-        <option value="Invoice">Invoice</option>
-        <option value="Credit Invoice">Credit Invoice</option>
-      </select>
+  <select id="labelFilter" onchange="renderTable()">
+    <option value="">전체 라벨</option>
+  </select>
 
- <select id="statusFilter" onchange="renderTable()">
-  <option value="">처리상태</option>
-  <option value="UNSETTLED">미정산</option>
-  <option value="SETTLED">정산완료</option>
-  <option value="ERROR">ERROR</option>
-</select>
-    </div>
+  <select id="typeFilter" onchange="renderTable()">
+    <option value="">전체 Type</option>
+    <option value="Invoice">Invoice</option>
+    <option value="Credit Invoice">Credit Invoice</option>
+    <option value="Credit Memo">Credit Memo</option>
+    <option value="Credit Note">Credit Note</option>
+  </select>
+
+  <select id="statusFilter" onchange="renderTable()">
+    <option value="">처리상태</option>
+    <option value="UNSETTLED">미정산</option>
+    <option value="SETTLED">정산완료</option>
+    <option value="ERROR">ERROR</option>
+  </select>
+</div>
 
     <div class="status" id="status">대기 중</div>
 
@@ -815,16 +827,22 @@ function categoryBadge(category) {
     function renderTable() {
       const tbody = document.getElementById("tbody");
 
-      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-      const label = document.getElementById("labelFilter").value;
-      const type = document.getElementById("typeFilter").value;
-      const status = document.getElementById("statusFilter").value;
+   const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+const dateFrom = document.getElementById("dateFromFilter").value;
+const dateTo = document.getElementById("dateToFilter").value;
+const label = document.getElementById("labelFilter").value;
+const type = document.getElementById("typeFilter").value;
+const status = document.getElementById("statusFilter").value;
 
       let rows = invoices.slice();
 
-      rows = rows.filter(x => {
-        if (label && x.SourceLabel !== label) return false;
-        if (type && x.InvoiceType !== type) return false;
+rows = rows.filter(x => {
+  if (label && x.SourceLabel !== label) return false;
+  if (type && x.InvoiceType !== type) return false;
+
+  if (!matchesInvoiceDateRange(x.InvoiceDate, dateFrom, dateTo)) {
+    return false;
+  }
      if (status) {
   const settled = isSettledInvoice(x);
 
@@ -1280,6 +1298,75 @@ function sortInvoicesByDueDate() {
       return d ? d.getTime() : 0;
     }
 
+    function matchesInvoiceDateRange(invoiceDateText, filterFrom, filterTo) {
+  if (!filterFrom && !filterTo) return true;
+
+  const invoiceRange = parseInvoiceDateRange(invoiceDateText);
+  if (!invoiceRange) return false;
+
+  const fromDate = filterFrom ? parseDateInputValue(filterFrom) : null;
+  const toDate = filterTo ? parseDateInputValue(filterTo) : null;
+
+  const filterStart = fromDate || toDate;
+  const filterEnd = toDate || fromDate;
+
+  if (!filterStart || !filterEnd) return true;
+
+  invoiceRange.start.setHours(0, 0, 0, 0);
+  invoiceRange.end.setHours(0, 0, 0, 0);
+  filterStart.setHours(0, 0, 0, 0);
+  filterEnd.setHours(0, 0, 0, 0);
+
+  // 날짜 범위가 겹치면 true
+  return invoiceRange.start <= filterEnd && invoiceRange.end >= filterStart;
+}
+
+
+function parseInvoiceDateRange(value) {
+  if (!value) return null;
+
+  const text = String(value).trim();
+
+  // 예: 25 Mar 2026 - 29 Mar 2026
+  // 예: 25 Mar 2026 ~ 29 Mar 2026
+  let parts = text.split(/\s*(?:-|~|–|—)\s*/);
+
+  // 주의: 12-APR-2026 같은 날짜도 "-"로 split되므로, 먼저 range 형태인지 확인
+  if (/\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s*(?:-|~|–|—)\s*\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/i.test(text)) {
+    const rangeParts = text.split(/\s*(?:-|~|–|—)\s*/);
+    const start = parseInvoiceDateValue(rangeParts[0]);
+    const end = parseInvoiceDateValue(rangeParts[1]);
+
+    if (start && end) {
+      return start <= end
+        ? { start: start, end: end }
+        : { start: end, end: start };
+    }
+  }
+
+  // 예: 12-APR-2026
+  // 예: 30-APR-2026
+  // 예: 2026-05-16
+  const single = parseInvoiceDateValue(text);
+  if (single) {
+    return {
+      start: single,
+      end: single
+    };
+  }
+
+  return null;
+}
+
+
+function parseDateInputValue(value) {
+  if (!value) return null;
+
+  const m = String(value).match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
+  if (!m) return null;
+
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
     function parseInvoiceDateValue(value) {
       if (!value) return null;
 
@@ -1290,6 +1377,12 @@ function sortInvoicesByDueDate() {
       if (m) {
         return new Date(Number(m[3]), monthIndex(m[2]), Number(m[1]));
       }
+
+      // 25 Mar 2026
+m = text.match(/^([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})$/);
+if (m) {
+  return new Date(Number(m[3]), monthIndex(m[2]), Number(m[1]));
+}
 
       // 2026-06-10
       m = text.match(/^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})$/);
