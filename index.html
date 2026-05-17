@@ -546,11 +546,25 @@ td.col-category {
   grid-column: 1 / -1;
 }
 
-.filter input,
-.filter select {
+.date-filter-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 62px;
+  gap: 6px;
+}
+
+.date-filter-row input {
+  grid-column: auto !important;
   min-width: 0;
-  padding: 0 6px;
   font-size: 12px;
+  padding: 0 5px;
+}
+
+#dateResetBtn {
+  min-width: 0;
+  height: 38px;
+  padding: 0 4px;
+  font-size: 11px;
 }
 
 .filter select {
