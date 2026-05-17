@@ -433,6 +433,22 @@ td.col-category {
     word-break: break-word;
   }
 
+ .grand-total-value {
+  display: inline-block;
+  padding-bottom: 2px;
+  font-weight: 900;
+}
+
+.grand-total-normal {
+  color: #0f766e;
+  border-bottom: 2px solid #0f766e;
+}
+
+.grand-total-credit {
+  color: #dc2626;
+  border-bottom: 2px solid #dc2626;
+}
+
 .detail-service-date {
   line-height: 1.25;
   white-space: normal;
@@ -1085,10 +1101,12 @@ subtitle.style.display = "none";
             <div class="detail-summary-label">Due Date</div>
             <div class="detail-summary-value">${escapeHtml(x.DueDate || "")}</div>
           </div>
-          <div class="detail-summary-item">
-            <div class="detail-summary-label">Grand Total</div>
-            <div class="detail-summary-value">${escapeHtml(x.Currency || "USD")} ${formatAmount(Number(x.Amount || 0))}</div>
-          </div>
+<div class="detail-summary-item">
+  <div class="detail-summary-label">Grand Total</div>
+  <div class="detail-summary-value grand-total-value ${Number(x.Amount || 0) < 0 ? "grand-total-credit" : "grand-total-normal"}">
+    ${escapeHtml(x.Currency || "USD")} ${formatAmount(Number(x.Amount || 0))}
+  </div>
+</div>
           <div class="detail-summary-item">
             <div class="detail-summary-label">Aircraft</div>
             <div class="detail-summary-value">${escapeHtml(x.Registry || "")}</div>
