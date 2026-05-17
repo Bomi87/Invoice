@@ -954,8 +954,10 @@ rows = rows.filter(x => {
 if (keyword) {
   const keywords = keyword
     .split(/[\s,]+/)
-    .map(v => v.trim())
+    .map(v => v.trim().toLowerCase())
     .filter(Boolean);
+
+  const itemSearchText = buildItemSearchText(x.ItemsJson);
 
   const blob = [
     x.SourceLabel,
@@ -968,7 +970,8 @@ if (keyword) {
     x.FileName,
     x.InvoiceType,
     x.Vendor,
-    x.Currency
+    x.Currency,
+    itemSearchText
   ].join(" ").toLowerCase();
 
   const matchedAll = keywords.every(k => blob.includes(k));
@@ -1173,7 +1176,24 @@ subtitle.style.display = "none";
       if (event && event.target && event.target.id !== "detailModal") return;
       document.getElementById("detailModal").classList.remove("show");
     }
+function buildItemSearchText(itemsJson) {
+  const items = parseItemsJson(itemsJson);
 
+  if (!items || items.length === 0) return "";
+
+  return items.map(item => {
+    return [
+      item.itemNo,
+      item.airport,
+      item.description,
+      item.unitPrice,
+      item.qty,
+      item.amount,
+      item.country
+    ].join(" ");
+  }).join(" ");
+}
+    
     function parseItemsJson(value) {
       if (!value) return [];
 
