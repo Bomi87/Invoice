@@ -365,19 +365,20 @@ td.col-category {
     box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
   }
 
-  .modal-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: flex-start;
-    padding: 16px 18px 10px;
-    border-bottom: 1px solid #e2e8f0;
-  }
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
 
-  .modal-title {
-    font-size: 18px;
-    font-weight: 900;
-  }
+.modal-title {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+}
 
   .modal-subtitle {
     margin-top: 4px;
@@ -386,15 +387,24 @@ td.col-category {
     line-height: 1.4;
   }
 
-  .modal-close {
-    background: #e2e8f0;
-    color: #0f172a;
-    border-radius: 10px;
-    padding: 8px 11px;
-  }
+.modal-close {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 999px;
+  padding: 0;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
   .modal-body {
-    padding: 14px 18px 18px;
+    padding: 12px 16px 16px;
   }
 
   .detail-summary {
@@ -706,7 +716,7 @@ td.col-category {
           <div class="modal-title" id="detailTitle">Invoice Detail</div>
           <div class="modal-subtitle" id="detailSubtitle"></div>
         </div>
-        <button class="modal-close" onclick="closeInvoiceDetail()">닫기</button>
+      <button class="modal-close" onclick="closeInvoiceDetail()" aria-label="Close">×</button>
       </div>
       <div class="modal-body" id="detailBody"></div>
     </div>
@@ -1042,14 +1052,10 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       const subtitle = document.getElementById("detailSubtitle");
       const body = document.getElementById("detailBody");
 
-      title.textContent = "Invoice Detail - " + (x.InvoiceNo || "");
+title.textContent = "Invoice Detail";
 
-      subtitle.textContent =
-        "Vendor: " + (x.Vendor || "") +
-        " / Date: " + (x.InvoiceDate || "") +
-        " / Due: " + (x.DueDate || "") +
-        " / Aircraft: " + (x.Registry || "") +
-        " / Airport: " + (x.Airport || "");
+subtitle.textContent = "";
+subtitle.style.display = "none";
 
       const summaryHtml = `
         <div class="detail-summary">
