@@ -915,11 +915,19 @@ function categoryBadge(category) {
 
 
 function resetDateFilter() {
+  const search = document.getElementById("searchInput");
   const from = document.getElementById("dateFromFilter");
   const to = document.getElementById("dateToFilter");
+  const label = document.getElementById("labelFilter");
+  const type = document.getElementById("typeFilter");
+  const status = document.getElementById("statusFilter");
 
+  if (search) search.value = "";
   if (from) from.value = "";
   if (to) to.value = "";
+  if (label) label.value = "";
+  if (type) type.value = "";
+  if (status) status.value = "";
 
   renderTable();
 }
