@@ -198,7 +198,7 @@ table {
 /* 여러 공항 표기 대응 */
 .col-airport { width: 140px; }
 
-.col-category { width: 90px; }
+.col-category { width: 135px; }
 
 /* Amount는 너무 넓지 않게 */
 .col-amount { width: 115px; }
@@ -256,15 +256,19 @@ td.col-category {
     font-weight: 800;
   }
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    background: #e2e8f0;
-  }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #e2e8f0;
+  white-space: nowrap;
+  overflow: visible;
+}
 
   .badge.wfs {
     background: #dcfce7;
