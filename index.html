@@ -691,13 +691,11 @@ td.col-category {
     <option value="">전체 라벨</option>
   </select>
 
-  <select id="typeFilter" onchange="renderTable()">
-    <option value="">전체 Type</option>
-    <option value="Invoice">Invoice</option>
-    <option value="Credit Invoice">Credit Invoice</option>
-    <option value="Credit Memo">Credit Memo</option>
-    <option value="Credit Note">Credit Note</option>
-  </select>
+<select id="typeFilter" onchange="renderTable()">
+  <option value="">전체 Type</option>
+  <option value="INVOICE">Invoice</option>
+  <option value="CREDIT">Credit Note</option>
+</select>
 
   <select id="statusFilter" onchange="renderTable()">
     <option value="">처리상태</option>
@@ -946,7 +944,12 @@ const status = document.getElementById("statusFilter").value;
 
 rows = rows.filter(x => {
   if (label && x.SourceLabel !== label) return false;
-  if (type && x.InvoiceType !== type) return false;
+if (type) {
+  const credit = isCreditInvoice(x);
+
+  if (type === "CREDIT" && !credit) return false;
+  if (type === "INVOICE" && credit) return false;
+}
 
   if (!matchesInvoiceDateRange(x.InvoiceDate, dateFrom, dateTo)) {
     return false;
