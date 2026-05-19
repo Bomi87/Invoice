@@ -453,7 +453,7 @@ td.col-category {
   }
 
 .detail-table {
-  min-width: 980px;
+  min-width: 900px;
   table-layout: fixed;
   width: 100%;
 }
@@ -473,7 +473,7 @@ td.col-category {
 
 .detail-table th:nth-child(3),
 .detail-table td:nth-child(3) {
-  width: 90px;
+  width: 100px;
   text-align: center;
 }
 
@@ -498,16 +498,9 @@ td.col-category {
 
 .detail-table th:nth-child(7),
 .detail-table td:nth-child(7) {
-  width: 100px;
-  text-align: right;
-}
-
-.detail-table th:nth-child(8),
-.detail-table td:nth-child(8) {
   width: 120px;
   text-align: right;
 }
-
     
   .detail-table th,
   .detail-table td {
@@ -1091,7 +1084,16 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
       const x = currentRows[rowIndex];
       if (!x) return;
 
-      const items = parseItemsJson(x.ItemsJson);
+        const items = parseItemsJson(x.ItemsJson);
+
+      const categoryUpper = String(x.Category || "").toUpperCase();
+      const labelUpper = String(x.SourceLabel || "").toUpperCase();
+
+      const isUasDetail =
+        labelUpper.includes("UAS") ||
+        categoryUpper.startsWith("UAS");
+
+   
       const modal = document.getElementById("detailModal");
       const title = document.getElementById("detailTitle");
       const subtitle = document.getElementById("detailSubtitle");
@@ -1154,39 +1156,73 @@ subtitle.style.display = "none";
       if (items.length === 0) {
         tableHtml = '<div class="status">표시할 detail item이 없습니다.</div>';
       } else {
+
+        const detailHeaderHtml = isUasDetail
+          ? `
+            <tr>
+              <th>#</th>
+              <th>Country</th>
+              <th>Airport</th>
+              <th>Description</th>
+              <th>Unit Price</th>
+              <th>Qty</th>
+              <th>Amount</th>
+            </tr>
+          `
+          : `
+            <tr>
+              <th>#</th>
+              <th>Airport</th>
+              <th>Description</th>
+              <th>Unit Price</th>
+              <th>Qty</th>
+              <th>Tax</th>
+              <th>Amount</th>
+            </tr>
+          `;
+
+        const detailRowsHtml = items.map((item, idx) => {
+          if (isUasDetail) {
+            return `
+              <tr>
+                <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
+                <td>${escapeHtml(item.country || "")}</td>
+                <td>${escapeHtml(item.airport || "")}</td>
+                <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
+                <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
+                <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+                <td class="num">${formatMoneyText(item.amount || "")}</td>
+              </tr>
+            `;
+          }
+
+          return `
+            <tr>
+              <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
+              <td>${escapeHtml(item.airport || "")}</td>
+              <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
+              <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
+              <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+              <td class="num">${formatMoneyText(item.taxAmount || item.tax || "")}</td>
+              <td class="num">${formatMoneyText(item.amount || "")}</td>
+            </tr>
+          `;
+        }).join("");
+
         tableHtml = `
           <div class="detail-table-wrap">
             <table class="detail-table">
               <thead>
-<tr>
-  <th>#</th>
-  <th>Country</th>
-  <th>Airport</th>
-  <th>Description</th>
-  <th>Unit Price</th>
-  <th>Qty</th>
-  <th>Tax</th>
-  <th>Amount</th>
-</tr>
+                ${detailHeaderHtml}
               </thead>
               <tbody>
-                ${items.map((item, idx) => `
-              <tr>
-<tr>
-  <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
-  <td>${escapeHtml(item.country || "")}</td>
-  <td>${escapeHtml(item.airport || "")}</td>
-  <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
-  <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
-  <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
-  <td class="num">${formatMoneyText(item.taxAmount || item.tax || "")}</td>
-  <td class="num">${formatMoneyText(item.amount || "")}</td>
-</tr>
-                `).join("")}
+                ${detailRowsHtml}
               </tbody>
             </table>
           </div>
         `;
+
+        
       }
 
       body.innerHTML = summaryHtml + tableHtml;
