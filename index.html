@@ -348,9 +348,7 @@ td.col-category {
   }
 
 .modal {
-  width: fit-content;
-  min-width: 760px;
-  max-width: 92vw;
+  width: min(860px, 96vw);
   max-height: 86vh;
   overflow: auto;
   background: #ffffff;
@@ -402,7 +400,7 @@ td.col-category {
 
 .detail-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, minmax(135px, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -454,8 +452,7 @@ td.col-category {
   }
 
 .detail-table {
-  width: auto;
-  min-width: max-content;
+  width: 100%;
   table-layout: auto;
   border-collapse: collapse;
 }
