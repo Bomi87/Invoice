@@ -1239,15 +1239,17 @@ function buildItemSearchText(itemsJson) {
   if (!items || items.length === 0) return "";
 
   return items.map(item => {
-    return [
-      item.itemNo,
-      item.airport,
-      item.description,
-      item.unitPrice,
-      item.qty,
-      item.amount,
-      item.country
-    ].join(" ");
+  return [
+  item.itemNo,
+  item.airport,
+  item.description,
+  item.unitPrice,
+  item.qty,
+  item.taxAmount,
+  item.tax,
+  item.amount,
+  item.country
+].join(" ");
   }).join(" ");
 }
     
