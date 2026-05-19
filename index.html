@@ -453,29 +453,33 @@ td.col-category {
   }
 
 .detail-table {
-  width: max-content;
-  min-width: 100%;
+  width: auto;
+  min-width: max-content;
   table-layout: auto;
   border-collapse: collapse;
 }
 
-/* 기본: 데이터 길이에 맞게 */
+/* Detail table 기본: 내용 길이에 맞게 */
 .detail-table th,
 .detail-table td {
-  white-space: nowrap;
-  width: auto;
+  width: auto !important;
   max-width: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  font-size: 12px;
+  padding: 7px 8px;
 }
 
-/* # 칼럼만 작게 고정 */
+/* # 칼럼만 작게 */
 .detail-table th:nth-child(1),
 .detail-table td:nth-child(1) {
-  width: 40px;
-  min-width: 40px;
+  width: 36px !important;
+  min-width: 36px;
   text-align: center;
 }
 
-/* Description은 길 수 있으니 너무 길면 줄바꿈 허용 */
+/* Description 칼럼: UAS는 4번째, WFS는 3번째 */
 .detail-table th:nth-child(3),
 .detail-table td:nth-child(3),
 .detail-table th:nth-child(4),
@@ -491,85 +495,6 @@ td.col-category {
   font-weight: 800;
   white-space: nowrap;
 }
-
-/*
-  UAS: 2 Country / 3 Airport / 4 Description / 5 Unit Price / 6 Qty / 7 Amount
-  WFS: 2 Airport  / 3 Description / 4 Unit Price / 5 Qty / 6 Tax / 7 Amount
-
-  그래서 3번 칼럼이 WFS에서는 Description이 될 수 있으므로,
-  3번도 너무 좁게 고정하면 안 됨.
-*/
-
-/* 2번째 칼럼: UAS Country 또는 WFS Airport */
-.detail-table th:nth-child(2),
-.detail-table td:nth-child(2) {
-  width: 110px;
-  text-align: left;
-  white-space: normal;
-}
-
-/* 3번째 칼럼: UAS Airport 또는 WFS Description */
-.detail-table th:nth-child(3),
-.detail-table td:nth-child(3) {
-  width: 260px;
-  text-align: left;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-/* 4번째 칼럼: UAS Description 또는 WFS Unit Price */
-.detail-table th:nth-child(4),
-.detail-table td:nth-child(4) {
-  width: 320px;
-  text-align: left;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-/* 5번째 칼럼 */
-.detail-table th:nth-child(5),
-.detail-table td:nth-child(5) {
-  width: 110px;
-  text-align: right;
-}
-
-/* 6번째 칼럼 */
-.detail-table th:nth-child(6),
-.detail-table td:nth-child(6) {
-  width: 90px;
-  text-align: right;
-}
-
-/* 7번째 칼럼 */
-.detail-table th:nth-child(7),
-.detail-table td:nth-child(7) {
-  width: 120px;
-  text-align: right;
-}
-
-    .detail-table td {
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.detail-table td[title] {
-  white-space: normal;
-  word-break: keep-all;
-}
-    
-  .detail-table th,
-  .detail-table td {
-    font-size: 12px;
-    padding: 8px 9px;
-  }
-
-  .detail-table .num {
-    text-align: right;
-    font-weight: 800;
-  }
-
 
   .due-soon {
     color: #dc2626;
