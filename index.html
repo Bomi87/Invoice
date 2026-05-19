@@ -453,12 +453,7 @@ td.col-category {
   }
 
 .detail-table {
-  min-width: 760px;
-  table-layout: fixed;
-  width: 100%;
-}
-.detail-table {
-  min-width: 900px;
+  min-width: 980px;
   table-layout: fixed;
   width: 100%;
 }
@@ -503,6 +498,12 @@ td.col-category {
 
 .detail-table th:nth-child(7),
 .detail-table td:nth-child(7) {
+  width: 100px;
+  text-align: right;
+}
+
+.detail-table th:nth-child(8),
+.detail-table td:nth-child(8) {
   width: 120px;
   text-align: right;
 }
@@ -1170,12 +1171,14 @@ subtitle.style.display = "none";
               <tbody>
                 ${items.map((item, idx) => `
               <tr>
+<tr>
   <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
   <td>${escapeHtml(item.country || "")}</td>
   <td>${escapeHtml(item.airport || "")}</td>
   <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
   <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
   <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+  <td class="num">${formatMoneyText(item.taxAmount || item.tax || "")}</td>
   <td class="num">${formatMoneyText(item.amount || "")}</td>
 </tr>
                 `).join("")}
@@ -1248,17 +1251,19 @@ function normalizeOneDetailItem(item, idx) {
   const description = String(item.description || item.Description || "").replace(/\s+/g, " ").trim();
   const unitPrice = String(item.unitPrice || item.unit_price || item.UnitPrice || "").trim();
   const qty = String(item.qty || item.quantity || item.Qty || "").trim();
+  const taxAmount = String(item.taxAmount || item.tax || item.TaxAmount || item.Tax || "").trim();
   const amount = String(item.amount || item.Amount || "").trim();
 
       // 정상 item이면 그대로 표시
       if (airport && description && unitPrice && qty && amount && !looksLikeMergedUasDescription(description)) {
- return [{
+return [{
   itemNo: item.itemNo || String(idx + 1),
   country: country,
   airport: airport,
   description: description,
   unitPrice: unitPrice,
   qty: qty,
+  taxAmount: taxAmount,
   amount: amount
 }];
       }
@@ -1284,6 +1289,7 @@ return [{
   description: description,
   unitPrice: unitPrice,
   qty: qty,
+  taxAmount: taxAmount,
   amount: amount
 }];
     }
