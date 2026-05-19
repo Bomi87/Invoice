@@ -453,16 +453,43 @@ td.col-category {
   }
 
 .detail-table {
-  min-width: 900px;
-  table-layout: fixed;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
 }
 
-/* # */
+/* 기본: 데이터 길이에 맞게 */
+.detail-table th,
+.detail-table td {
+  white-space: nowrap;
+  width: auto;
+  max-width: none;
+}
+
+/* # 칼럼만 작게 고정 */
 .detail-table th:nth-child(1),
 .detail-table td:nth-child(1) {
-  width: 45px;
+  width: 40px;
+  min-width: 40px;
   text-align: center;
+}
+
+/* Description은 길 수 있으니 너무 길면 줄바꿈 허용 */
+.detail-table th:nth-child(3),
+.detail-table td:nth-child(3),
+.detail-table th:nth-child(4),
+.detail-table td:nth-child(4) {
+  max-width: 420px;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+/* 숫자 칼럼 */
+.detail-table .num {
+  text-align: right;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 /*
