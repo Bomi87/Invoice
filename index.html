@@ -1528,7 +1528,7 @@ function sortInvoicesByDueDate() {
   });
 }
 
-    function applyInvoiceSort(rows, sortType) {
+  function applyInvoiceSort(rows, sortType) {
   const type = String(sortType || "DUE_ASC").toUpperCase();
 
   rows.sort((a, b) => {
@@ -1548,7 +1548,6 @@ function sortInvoicesByDueDate() {
       const apCompare = String(a.Airport || "").localeCompare(String(b.Airport || ""));
       if (apCompare !== 0) return apCompare;
 
-      // 같은 Airport 안에서는 Due Date 빠른순
       return getDateTimeForSort(a.DueDate) - getDateTimeForSort(b.DueDate);
     }
 
@@ -1560,6 +1559,82 @@ function sortInvoicesByDueDate() {
     return getDateTimeForSort(a.DueDate) - getDateTimeForSort(b.DueDate);
   });
 }
+    
+function getDateTimeForSort(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return 9999999999999;
+  }
+
+  // Credit Note / Credit Memo / 문자값은 아래로
+  if (/CREDIT\s*NOTE|CREDIT\s*MEMO/i.test(raw)) {
+    return 9999999999999;
+  }
+
+  // 기존 코드에 parseInvoiceDateValue 함수가 있으면 우선 사용
+  if (typeof parseInvoiceDateValue === "function") {
+    const parsed = parseInvoiceDateValue(raw);
+    if (parsed && !isNaN(parsed.getTime())) {
+      return parsed.getTime();
+    }
+  }
+
+  // 2026-05-17 형식
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    return new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3])
+    ).getTime();
+  }
+
+  // 31-MAY-2026 / 31-May-2026 형식
+  const dmy = raw.match(/^(\d{1,2})[-\s\/]([A-Za-z]{3})[-\s\/](\d{2,4})$/);
+  if (dmy) {
+    const months = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11
+    };
+
+    const day = Number(dmy[1]);
+    const mon = months[String(dmy[2]).toUpperCase()];
+    let year = Number(dmy[3]);
+
+    if (year < 100) year += 2000;
+
+    if (mon !== undefined) {
+      return new Date(year, mon, day).getTime();
+    }
+  }
+
+  // 22 Apr 2026 - 24 Apr 2026 같은 기간형은 앞 날짜 기준
+  const rangeStart = raw.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+  if (rangeStart) {
+    const months = {
+      JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+      JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11
+    };
+
+    const day = Number(rangeStart[1]);
+    const mon = months[String(rangeStart[2]).toUpperCase()];
+    const year = Number(rangeStart[3]);
+
+    if (mon !== undefined) {
+      return new Date(year, mon, day).getTime();
+    }
+  }
+
+  const nativeDate = new Date(raw);
+  if (!isNaN(nativeDate.getTime())) {
+    return nativeDate.getTime();
+  }
+
+  return 9999999999999;
+}
+
+    
     function parseDueDateForSort(value) {
       const d = parseInvoiceDateValue(value);
       return d ? d.getTime() : 0;
