@@ -504,6 +504,32 @@ td.col-category {
   padding: 12px;
 }
 
+    .detail-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.detail-section-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.detail-inline-note {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f766e;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
 .invoice-summary-box {
   margin-top: 10px;
   background: #f8fafc;
@@ -1274,6 +1300,7 @@ subtitle.style.display = "none";
 
 const normalItems = items.filter(item => !isInvoiceSummaryItem(item));
 const summaryItems = items.filter(item => isInvoiceSummaryItem(item));
+        const wfsFuelPriceNote = getWfsFuelPriceNote(x, normalItems);
 
 const detailRowsHtml = normalItems.map((item, idx) => {
   if (isUasDetail) {
@@ -1334,7 +1361,10 @@ const summaryBoxHtml = summaryItems.length > 0
 
 tableHtml = `
   <div class="detail-section-box">
-    <div class="detail-section-title">Invoice Items</div>
+    <div class="detail-section-title-row">
+      <div class="detail-section-title">Invoice Items</div>
+      ${wfsFuelPriceNote ? `<div class="detail-inline-note">${escapeHtml(wfsFuelPriceNote)}</div>` : ""}
+    </div>
 
     <div class="detail-table-wrap">
       <table class="detail-table">
@@ -1386,6 +1416,46 @@ function getInvoiceSummaryLabel(item) {
   if (type === "INVOICE_SUMMARY") return "Summary";
 
   return "";
+}
+
+
+function parseLooseNumber(value) {
+  const s = String(value == null ? "" : value)
+    .replace(/[^0-9.\-]/g, "")
+    .trim();
+
+  const n = Number(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function getWfsFuelPriceNote(row, items) {
+  const category = String((row && row.Category) || "").toUpperCase();
+const sourceLabel = String((row && row.SourceLabel) || "").toUpperCase();
+
+  // WFS Fuel 계열에서만 표시
+if (!category.includes("WFS_FUEL") && !sourceLabel.includes("WFS")) {
+  return "";
+}
+
+  const detailItems = Array.isArray(items) ? items : [];
+
+  // JET FUEL item 찾기
+  const jetFuelItem = detailItems.find(item =>
+    /JET\s*FUEL/i.test(String(item.description || item.Description || ""))
+  );
+
+  if (!jetFuelItem) return "";
+
+  const qty = parseLooseNumber(jetFuelItem.qty || jetFuelItem.quantity || jetFuelItem.Qty);
+  const grandTotal = parseLooseNumber(row.Amount || row.amount);
+  const airport = String(row.Airport || row.airport || "").trim();
+  const currency = String(row.Currency || row.currency || "USD").trim() || "USD";
+
+  if (!qty || !grandTotal) return "";
+
+  const unitPrice = grandTotal / qty;
+
+  return `(${airport || "Fuel"} 유가 : ${currency} ${unitPrice.toFixed(2)} per Gallon)`;
 }
     
     function closeInvoiceDetail(event) {
