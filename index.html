@@ -98,7 +98,7 @@
 
 .filter {
   display: grid;
-  grid-template-columns: 1.5fr 1.1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.55fr 1.15fr repeat(4, minmax(130px, 1fr));
   gap: 7px;
   margin-bottom: 6px;
 }
@@ -588,9 +588,9 @@ td.col-category {
 }
     
 .filter {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-
+    
 .filter input#searchInput {
   grid-column: 1 / -1;
 }
@@ -700,11 +700,11 @@ td.col-category {
     <option value="">전체 라벨</option>
   </select>
 
-<select id="typeFilter" onchange="renderTable()">
-  <option value="">전체 Type</option>
-  <option value="INVOICE">Invoice</option>
-  <option value="CREDIT">Credit Note</option>
-</select>
+  <select id="typeFilter" onchange="renderTable()">
+    <option value="">전체 Type</option>
+    <option value="INVOICE">Invoice</option>
+    <option value="CREDIT">Credit Note</option>
+  </select>
 
   <select id="statusFilter" onchange="renderTable()">
     <option value="">처리상태</option>
@@ -712,6 +712,13 @@ td.col-category {
     <option value="SETTLED">정산완료</option>
     <option value="ERROR">ERROR</option>
   </select>
+
+<select id="sortFilter" onchange="renderTable()">
+  <option value="DUE_ASC">정렬: Due Date 빠른순</option>
+  <option value="RECEIVED_DESC">정렬: Received 최신순</option>
+  <option value="AIRPORT_ASC">정렬: Airport 순</option>
+  <option value="AMOUNT_DESC">정렬: 금액 큰순</option>
+</select>
 </div>
 
     <div class="status" id="status">대기 중</div>
@@ -928,6 +935,7 @@ function resetDateFilter() {
   const label = document.getElementById("labelFilter");
   const type = document.getElementById("typeFilter");
   const status = document.getElementById("statusFilter");
+  const sort = document.getElementById("sortFilter");
 
   if (search) search.value = "";
   if (from) from.value = "";
@@ -935,6 +943,7 @@ function resetDateFilter() {
   if (label) label.value = "";
   if (type) type.value = "";
   if (status) status.value = "";
+  if (sort) sort.value = "DUE_ASC";
 
   renderTable();
 }
@@ -948,7 +957,9 @@ const dateTo = document.getElementById("dateToFilter").value;
 const label = document.getElementById("labelFilter").value;
 const type = document.getElementById("typeFilter").value;
 const status = document.getElementById("statusFilter").value;
-
+const sort = document.getElementById("sortFilter")
+  ? document.getElementById("sortFilter").value
+  : "DUE_ASC";
       let rows = invoices.slice();
 
 rows = rows.filter(x => {
@@ -1001,6 +1012,8 @@ if (keyword) {
 
         return true;
       });
+
+        applyInvoiceSort(rows, sort);
 
       updateSummary(rows);
       currentRows = rows;
@@ -1510,17 +1523,43 @@ function sortInvoicesByDueDate() {
       return aSettled ? 1 : -1;
     }
 
-    // 2순위: 같은 정산 상태끼리는 Due Date 최신순
-    const da = parseInvoiceDateValue(a.DueDate);
-    const db = parseInvoiceDateValue(b.DueDate);
-
-    const ta = da ? da.getTime() : 0;
-    const tb = db ? db.getTime() : 0;
-
-    return tb - ta;
+    // 2순위: 같은 정산 상태끼리는 Due Date 빠른순
+    return getDateTimeForSort(a.DueDate) - getDateTimeForSort(b.DueDate);
   });
 }
 
+    function applyInvoiceSort(rows, sortType) {
+  const type = String(sortType || "DUE_ASC").toUpperCase();
+
+  rows.sort((a, b) => {
+    const aSettled = isSettledInvoice(a);
+    const bSettled = isSettledInvoice(b);
+
+    // 항상 미정산 먼저, 정산완료는 아래로
+    if (aSettled !== bSettled) {
+      return aSettled ? 1 : -1;
+    }
+
+    if (type === "RECEIVED_DESC") {
+      return getDateTimeForSort(b.ReceivedAt) - getDateTimeForSort(a.ReceivedAt);
+    }
+
+    if (type === "AIRPORT_ASC") {
+      const apCompare = String(a.Airport || "").localeCompare(String(b.Airport || ""));
+      if (apCompare !== 0) return apCompare;
+
+      // 같은 Airport 안에서는 Due Date 빠른순
+      return getDateTimeForSort(a.DueDate) - getDateTimeForSort(b.DueDate);
+    }
+
+    if (type === "AMOUNT_DESC") {
+      return Number(b.Amount || 0) - Number(a.Amount || 0);
+    }
+
+    // 기본값: Due Date 빠른순
+    return getDateTimeForSort(a.DueDate) - getDateTimeForSort(b.DueDate);
+  });
+}
     function parseDueDateForSort(value) {
       const d = parseInvoiceDateValue(value);
       return d ? d.getTime() : 0;
