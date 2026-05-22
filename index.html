@@ -497,6 +497,25 @@ td.col-category {
   white-space: nowrap;
 }
 
+.invoice-summary-row td {
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.invoice-summary-grand td {
+  background: #bae6fd;
+  font-weight: 900;
+}
+
+.invoice-summary-label {
+  text-align: right !important;
+  color: #0f172a;
+}
+
+.invoice-summary-amount {
+  color: #0f172a;
+}
+    
   .due-soon {
     color: #dc2626;
     font-weight: 900;
@@ -737,7 +756,7 @@ td.col-category {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxneGWIcmoC3UILNfKYx2mFcyFrdwnXQqYkrddbY3pYeU7OKAkmmbgvNuQ5bjImhZuwA/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXy3f9FczeyWjBGc82cyQq3eLtrC4w7nR7EtUBlzo1PiZfKpYfxoq7kIh-Sd1Wv7YDBA/exec";
     const API_TOKEN = "sk_invoice_2026_9xKp73Qw_invoice_check";
 
     let invoices = [];
@@ -1173,33 +1192,53 @@ subtitle.style.display = "none";
             </tr>
           `;
 
-        const detailRowsHtml = items.map((item, idx) => {
-          if (isUasDetail) {
-            return `
-              <tr>
-                <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
-                <td>${escapeHtml(item.country || "")}</td>
-                <td>${escapeHtml(item.airport || "")}</td>
-                <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
-                <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
-                <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
-                <td class="num">${formatMoneyText(item.amount || "")}</td>
-              </tr>
-            `;
-          }
+const detailRowsHtml = items.map((item, idx) => {
+  const itemType = String(item.itemType || "").toUpperCase();
 
-          return `
-            <tr>
-              <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
-              <td>${escapeHtml(item.airport || "")}</td>
-              <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
-              <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
-              <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
-              <td class="num">${formatMoneyText(item.taxAmount || item.tax || "")}</td>
-              <td class="num">${formatMoneyText(item.amount || "")}</td>
-            </tr>
-          `;
-        }).join("");
+  if (itemType === "INVOICE_SUMMARY" || itemType === "INVOICE_GRAND_TOTAL") {
+    const label = item.label || "";
+    const amountText = itemType === "INVOICE_GRAND_TOTAL" && item.currency
+      ? escapeHtml(item.currency + " " + formatMoneyText(item.amount || ""))
+      : formatMoneyText(item.amount || "");
+
+    return `
+      <tr class="${itemType === "INVOICE_GRAND_TOTAL" ? "invoice-summary-grand" : "invoice-summary-row"}">
+        <td colspan="${isUasDetail ? 6 : 6}" class="invoice-summary-label">
+          ${escapeHtml(label)}
+        </td>
+        <td class="num invoice-summary-amount">
+          ${amountText}
+        </td>
+      </tr>
+    `;
+  }
+
+  if (isUasDetail) {
+    return `
+      <tr>
+        <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
+        <td>${escapeHtml(item.country || "")}</td>
+        <td>${escapeHtml(item.airport || "")}</td>
+        <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
+        <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
+        <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+        <td class="num">${formatMoneyText(item.amount || "")}</td>
+      </tr>
+    `;
+  }
+
+  return `
+    <tr>
+      <td>${escapeHtml(item.itemNo || String(idx + 1))}</td>
+      <td>${escapeHtml(item.airport || "")}</td>
+      <td title="${escapeHtml(item.description || "")}">${escapeHtml(item.description || "")}</td>
+      <td class="num">${formatMoneyText(item.unitPrice || item.unit_price || "")}</td>
+      <td class="num">${escapeHtml(item.qty || item.quantity || "")}</td>
+      <td class="num">${formatMoneyText(item.taxAmount || item.tax || "")}</td>
+      <td class="num">${formatMoneyText(item.amount || "")}</td>
+    </tr>
+  `;
+}).join("");
 
         tableHtml = `
           <div class="detail-table-wrap">
