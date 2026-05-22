@@ -496,26 +496,82 @@ td.col-category {
   font-weight: 800;
   white-space: nowrap;
 }
-
-.invoice-summary-row td {
-  background: #f8fafc;
-  font-weight: 800;
+.detail-section-box {
+  margin-top: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
 }
 
-.invoice-summary-grand td {
-  background: #bae6fd;
+.detail-section-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.invoice-summary-box {
+  margin-top: 14px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  max-width: 420px;
+}
+
+.invoice-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invoice-summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.invoice-summary-line:last-child {
+  border-bottom: 0;
+}
+
+.invoice-summary-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.invoice-summary-value {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: right;
+}
+
+.grand-total-line {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 2px solid #94a3b8;
+  border-bottom: 0;
+}
+
+.grand-total-line .invoice-summary-name,
+.grand-total-line .invoice-summary-value {
+  color: #0f766e;
+  font-size: 15px;
   font-weight: 900;
 }
 
-.invoice-summary-label {
-  text-align: right !important;
-  color: #0f172a;
+.empty-cell {
+  text-align: center;
+  color: #64748b;
+  padding: 14px 8px;
 }
 
-.invoice-summary-amount {
-  color: #0f172a;
-}
-    
   .due-soon {
     color: #dc2626;
     font-weight: 900;
@@ -819,7 +875,7 @@ td.col-category {
       try {
         const data = await callApi("list");
         invoices = data.invoices || [];
-        sortInvoicesByDueDate();
+       applyInvoiceSort(invoices, "RECEIVED_DESC");
 
         updateFilters();
         renderTable();
@@ -944,7 +1000,7 @@ function resetDateFilter() {
   if (label) label.value = "";
   if (type) type.value = "";
   if (status) status.value = "";
-  if (sort) sort.value = "DUE_ASC";
+if (sort) sort.value = "RECEIVED_DESC";
 
   renderTable();
 }
@@ -960,7 +1016,7 @@ const type = document.getElementById("typeFilter").value;
 const status = document.getElementById("statusFilter").value;
 const sort = document.getElementById("sortFilter")
   ? document.getElementById("sortFilter").value
-  : "DUE_ASC";
+  : "RECEIVED_DESC";
       let rows = invoices.slice();
 
 rows = rows.filter(x => {
@@ -1206,27 +1262,10 @@ subtitle.style.display = "none";
             </tr>
           `;
 
-const detailRowsHtml = items.map((item, idx) => {
-  const itemType = String(item.itemType || "").toUpperCase();
+const normalItems = items.filter(item => !isInvoiceSummaryItem(item));
+const summaryItems = items.filter(item => isInvoiceSummaryItem(item));
 
-  if (itemType === "INVOICE_SUMMARY" || itemType === "INVOICE_GRAND_TOTAL") {
-    const label = item.label || "";
-    const amountText = itemType === "INVOICE_GRAND_TOTAL" && item.currency
-      ? escapeHtml(item.currency + " " + formatMoneyText(item.amount || ""))
-      : formatMoneyText(item.amount || "");
-
-    return `
-      <tr class="${itemType === "INVOICE_GRAND_TOTAL" ? "invoice-summary-grand" : "invoice-summary-row"}">
-        <td colspan="${isUasDetail ? 6 : 6}" class="invoice-summary-label">
-          ${escapeHtml(label)}
-        </td>
-        <td class="num invoice-summary-amount">
-          ${amountText}
-        </td>
-      </tr>
-    `;
-  }
-
+const detailRowsHtml = normalItems.map((item, idx) => {
   if (isUasDetail) {
     return `
       <tr>
@@ -1254,18 +1293,57 @@ const detailRowsHtml = items.map((item, idx) => {
   `;
 }).join("");
 
-        tableHtml = `
-          <div class="detail-table-wrap">
-            <table class="detail-table">
-              <thead>
-                ${detailHeaderHtml}
-              </thead>
-              <tbody>
-                ${detailRowsHtml}
-              </tbody>
-            </table>
-          </div>
-        `;
+const summaryBoxHtml = summaryItems.length > 0
+  ? `
+    <div class="invoice-summary-box">
+      <div class="detail-section-title">Invoice Summary</div>
+
+      <div class="invoice-summary-list">
+        ${summaryItems.map(item => {
+          const label = getInvoiceSummaryLabel(item);
+          const itemType = String(item.itemType || "").toUpperCase();
+          const isGrandTotal =
+            itemType === "INVOICE_GRAND_TOTAL" ||
+            /GRAND\s*TOTAL/i.test(label);
+
+          const amountText = isGrandTotal && item.currency
+            ? escapeHtml(item.currency + " " + formatMoneyText(item.amount || ""))
+            : formatMoneyText(item.amount || "");
+
+          return `
+            <div class="invoice-summary-line ${isGrandTotal ? "grand-total-line" : ""}">
+              <div class="invoice-summary-name">${escapeHtml(label)}</div>
+              <div class="invoice-summary-value">${amountText}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `
+  : "";
+
+tableHtml = `
+  <div class="detail-section-box">
+    <div class="detail-section-title">Invoice Items</div>
+
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead>
+          ${detailHeaderHtml}
+        </thead>
+        <tbody>
+          ${detailRowsHtml || `
+            <tr>
+              <td colspan="7" class="empty-cell">No detail items</td>
+            </tr>
+          `}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  ${summaryBoxHtml}
+`;
 
         
       }
@@ -1274,6 +1352,32 @@ const detailRowsHtml = items.map((item, idx) => {
       modal.classList.add("show");
     }
 
+function isInvoiceSummaryItem(item) {
+  const type = String((item && item.itemType) || "").toUpperCase();
+  const label = String((item && item.label) || "").trim();
+
+  if (type === "INVOICE_SUMMARY" || type === "INVOICE_GRAND_TOTAL") {
+    return true;
+  }
+
+  if (/^(SUB\s*TOTAL|BANK\s*COMMISSION|VAT|GRAND\s*TOTAL)$/i.test(label)) {
+    return true;
+  }
+
+  return false;
+}
+
+function getInvoiceSummaryLabel(item) {
+  const type = String((item && item.itemType) || "").toUpperCase();
+  const label = String((item && item.label) || "").trim();
+
+  if (label) return label;
+  if (type === "INVOICE_GRAND_TOTAL") return "Grand Total";
+  if (type === "INVOICE_SUMMARY") return "Summary";
+
+  return "";
+}
+    
     function closeInvoiceDetail(event) {
       if (event && event.target && event.target.id !== "detailModal") return;
       document.getElementById("detailModal").classList.remove("show");
@@ -1330,6 +1434,23 @@ function buildItemSearchText(itemsJson) {
     }
 
 function normalizeOneDetailItem(item, idx) {
+  const itemType = String(item.itemType || item.ItemType || "").toUpperCase();
+  const label = String(item.label || item.Label || "").trim();
+
+  // UAS Summary item은 일반 detail item으로 변환하지 않고 그대로 보존
+  if (
+    itemType === "INVOICE_SUMMARY" ||
+    itemType === "INVOICE_GRAND_TOTAL" ||
+    /^(SUB\s*TOTAL|BANK\s*COMMISSION|VAT|GRAND\s*TOTAL)$/i.test(label)
+  ) {
+    return [{
+      itemType: itemType,
+      label: label,
+      amount: String(item.amount || item.Amount || "").trim(),
+      currency: String(item.currency || item.Currency || "").trim()
+    }];
+  }
+
   const country = String(item.country || item.Country || "").replace(/\s+/g, " ").trim();
   const airport = String(item.airport || item.Airport || "").trim().toUpperCase();
   const description = String(item.description || item.Description || "").replace(/\s+/g, " ").trim();
