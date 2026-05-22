@@ -573,10 +573,15 @@ td.col-category {
   padding: 14px 8px;
 }
 
-  .due-soon {
-    color: #dc2626;
-    font-weight: 900;
-  }
+.due-overdue {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.due-soon {
+  color: #f97316;
+  font-weight: 900;
+}
 
   .settle-btn {
     background: #0f766e;
@@ -1080,8 +1085,12 @@ tbody.innerHTML = rows.map((x, rowIndex) => {
   const amount = Number(x.Amount || 0);
   const amountClass = amount < 0 ? "negative" : "positive";
   const settled = isSettledInvoice(x);
-  const dueSoon = isDueWithinDays(x.DueDate, 10) && !settled;
-  const dueDateClass = dueSoon ? "due-soon" : "";
+const dueStatus = !settled ? getDueDateStatus(x.DueDate, 10) : "";
+
+const dueDateClass =
+  dueStatus === "OVERDUE" ? "due-overdue" :
+  dueStatus === "SOON" ? "due-soon" :
+  "";
 
 
 
@@ -1622,19 +1631,31 @@ setStatus("정산완료 취소됨: " + (x.InvoiceNo || x.FileName || ""));
       );
     }
 
-    function isDueWithinDays(value, days) {
-      const due = parseInvoiceDateValue(value);
-      if (!due) return false;
+function getDueDateStatus(value, days) {
+  const due = parseInvoiceDateValue(value);
+  if (!due) return "";
 
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
-      due.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
 
-      const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(
+    (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
-      return diffDays >= 0 && diffDays <= days;
-    }
+  // 과거 ~ 오늘
+  if (diffDays <= 0) {
+    return "OVERDUE";
+  }
+
+  // 내일 ~ days일 이내
+  if (diffDays > 0 && diffDays <= days) {
+    return "SOON";
+  }
+
+  return "";
+}
 
 function sortInvoicesByDueDate() {
   invoices.sort((a, b) => {
